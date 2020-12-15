@@ -3,6 +3,7 @@
 import cv2
 import time
 import math
+import argparse
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -12,6 +13,7 @@ NUM_COORDS = 16
 NUM_BOXES = 896
 MIN_SCORE_THRESH = 0.75
 NMS_THRESH = 0.85
+NUM_KEYPOINT = 6
 
 
 class Anchor:
@@ -23,16 +25,19 @@ class Anchor:
 
 
 class Box:
-    def __init__(self, score, xmin, ymin, width, height):
+    def __init__(self, score, box):
         self.score = score
-        self.xmin = xmin
-        self.ymin = ymin
-        self.width = width
-        self.height = height
+        self.xmin = box[0]
+        self.ymin = box[1]
+        self.width = box[2]
+        self.height = box[3]
+        self.keypoints = []
+        for i in range(NUM_KEYPOINT):
+            self.keypoints.append((box[4 + 2 * i], box[4 + 2 * i + 1]))
 
 
 def calibrate(raw_boxes, i, anchors):
-    box_data = np.zeros(4)
+    box_data = np.zeros(NUM_COORDS)
     box_offset = i * NUM_COORDS
 
     # x_center,y_center 是 box 中心坐标距其对应的 anchor 的绝对偏移量
@@ -55,6 +60,14 @@ def calibrate(raw_boxes, i, anchors):
     box_data[2] = w
     box_data[3] = h
 
+    # for 6 keypoint
+    for j in range(NUM_KEYPOINT * 2):
+        box_data[4 + j] = raw_boxes[box_offset + 4 + j]
+        if j % 2 == 0:
+            box_data[4 + j] = box_data[4 + j] / IMG_WIDTH + anchors[i].x_center
+        else:
+            box_data[4 + j] = box_data[4 + j] / IMG_HEIGHT + anchors[i].y_center
+
     return box_data
 
 
@@ -66,13 +79,7 @@ def detect(raw_boxes, anchors_, detection_scores):
             continue
 
         box = calibrate(raw_boxes, i, anchors_)
-        box = Box(
-            detection_scores[i],
-            box[0],
-            box[1],
-            box[2],
-            box[3],
-        )
+        box = Box(detection_scores[i], box)
         boxes.append(box)
     return boxes
 
@@ -133,8 +140,8 @@ def gen_anchors():
     return anchors
 
 
-def main():
-    model_path = "model.tflite"
+def main(img_file):
+    model_path = "front.tflite"
 
     # Load TFLite model and allocate tensors.
     interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -143,13 +150,8 @@ def main():
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    # print('--------------------------------')
-    # print("input_details: ")
-    # print(input_details)
-    # print("output_details: ")
-    # print(output_details)
-
-    img = cv2.imread("image/1.png")
+    img = cv2.imread(img_file)
+    # img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
     img_height = img.shape[0]
     img_width = img.shape[1]
 
@@ -157,6 +159,9 @@ def main():
 
     input_width = input_details[0]["shape"][1]
     input_height = input_details[0]["shape"][2]
+    assert input_width == IMG_WIDTH
+    assert input_height == IMG_HEIGHT
+
     input_data = cv2.resize(img_rgb, (input_width, input_height)).astype(np.float32)
     input_data = (input_data - 127.5) / 127.5
     input_data = np.expand_dims(input_data, axis=0)
@@ -170,19 +175,19 @@ def main():
     raw_scores = np.reshape(classificators, (-1))
 
     anchors = gen_anchors()
-    detections = detect(raw_boxes, anchors, raw_scores)
-    detections = NMS(detections, NMS_THRESH)
-
-    for detection in detections:
-        x1 = int(img_width * detection.xmin)
-        x2 = int(img_width * (detection.xmin + detection.width))
-        y1 = int(img_height * detection.ymin)
-        y2 = int(img_height * (detection.ymin + detection.height))
+    boxes = detect(raw_boxes, anchors, raw_scores)
+    boxes = NMS(boxes, NMS_THRESH)
+    print(boxes)
+    for box in boxes:
+        x1 = int(img_width * box.xmin)
+        x2 = int(img_width * (box.xmin + box.width))
+        y1 = int(img_height * box.ymin)
+        y2 = int(img_height * (box.ymin + box.height))
 
         cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
         cv2.putText(
             img,
-            "{:.2f}".format(detection.score),
+            "{:.2f}".format(box.score),
             (x1, y1 - 6),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
@@ -190,10 +195,23 @@ def main():
             2,
         )
 
+        for point in box.keypoints:
+            print((point[0], point[1]))
+            cv2.circle(
+                img,
+                (int(img_width * point[0]), int(img_height * point[1])),
+                color=(0, 255, 0),
+                radius=3,
+                thickness=3,
+            )
+
     cv2.imshow("", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file_name")
+    flags = parser.parse_args()
+    main(flags.file_name)
