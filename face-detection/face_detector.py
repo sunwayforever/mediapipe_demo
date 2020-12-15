@@ -224,11 +224,11 @@ def detect_image(img):
 
 
 def detect_stream():
-    inference = Detector()
+    detector = Detector()
     vid = cv2.VideoCapture(0)
     while True:
         _, img = vid.read()
-        boxes = inference(img)
+        boxes = detector(img)
         img = annotate_image(img, boxes)
         cv2.imshow("", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):

@@ -16,7 +16,7 @@ from face_cropper import FaceCropper
 
 IMG_WIDTH = 192
 IMG_HEIGHT = 192
-MIN_PROB_THRESH = 0.8
+MIN_PROB_THRESH = 0.5
 
 
 class Mesh(object):
@@ -62,7 +62,7 @@ class Mesh(object):
 
 def annotate_image(img, surface):
     for x, y, _ in surface:
-        cv2.circle(img, (x, y), color=(0, 0, 255), radius=1, thickness=2)
+        cv2.circle(img, (x, y), color=(0, 255, 255), radius=0, thickness=1)
     return img
 
 
@@ -74,12 +74,27 @@ def mesh_image(img):
     mesh = Mesh()
     img = cv2.imread(img)
     surface, prob = mesh(img)
-    if prob < MIN_PROB_THRESH:
-        return
-    img = annotate_image(img, surface)
+    if prob >= MIN_PROB_THRESH:
+        img = annotate_image(img, surface)
     cv2.imshow("", img)
     while cv2.waitKey(1) & 0xFF != ord("q"):
         pass
+    cv2.destroyAllWindows()
+
+
+def mesh_stream():
+    mesh = Mesh()
+    vid = cv2.VideoCapture(0)
+    while True:
+        _, img = vid.read()
+        surface, prob = mesh(img)
+        if prob >= MIN_PROB_THRESH:
+            img = annotate_image(img, surface)
+        cv2.imshow("", img)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    vid.release()
     cv2.destroyAllWindows()
 
 
