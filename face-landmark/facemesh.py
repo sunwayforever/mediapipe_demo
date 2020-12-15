@@ -60,9 +60,15 @@ class Mesh(object):
         return surface, sigmoid(prob)
 
 
+def remap(x, lo, hi, scale):
+    return (x - lo) / (hi - lo + 1e-6) * scale
+
+
 def annotate_image(img, surface):
-    for x, y, _ in surface:
-        cv2.circle(img, (x, y), color=(0, 255, 255), radius=0, thickness=1)
+    z_min, z_max = surface[:, 2].min(), surface[:, 2].max()
+    for x, y, z in surface:
+        color = 255 - remap(z, z_min, z_max, 255)
+        cv2.circle(img, (x, y), color=(color, color, color), radius=1, thickness=1)
     return img
 
 
@@ -86,7 +92,9 @@ def mesh_stream():
     mesh = Mesh()
     vid = cv2.VideoCapture(0)
     while True:
-        _, img = vid.read()
+        succ, img = vid.read()
+        if not succ:
+            continue
         surface, prob = mesh(img)
         if prob >= MIN_PROB_THRESH:
             img = annotate_image(img, surface)
