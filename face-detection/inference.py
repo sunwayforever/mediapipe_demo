@@ -10,25 +10,7 @@ import matplotlib.pyplot as plt
 IMG_HEIGHT, IMG_WIDTH = 128, 128
 NUM_COORDS = 16
 NUM_BOXES = 896
-
-
-class SsdAnchorsCalculatorOptions:
-    def __init__(
-        self,
-        input_size_width,
-        input_size_height,
-        num_layers,
-        feature_map_width,
-        feature_map_height,
-        strides,
-        aspect_ratios,
-        anchor_offset_x=0.5,
-        anchor_offset_y=0.5,
-        interpolated_scale_aspect_ratio=1.0,
-    ):
-        # Size of input images.
-        self.input_size_width = input_size_width
-        self.input_size_height = input_size_height
+MIN_SCORE_THRESH = 0.75
 
 
 class Anchor:
@@ -48,33 +30,7 @@ class Detection:
         self.height = height
 
 
-class TfLiteTensorsToDetectionsCalculatorOptions:
-    def __init__(
-        self,
-        num_classes,
-        keypoint_coord_offset,
-        score_clipping_thresh,
-        min_score_thresh,
-        num_values_per_keypoint=2,
-    ):
-        # The number of output classes predicted by the detection model.
-        self.num_classes = num_classes
-        # The number of output boxes predicted by the detection model.
-        # The number of output values per boxes predicted by the detection model. The
-        # values contain bounding boxes, keypoints, etc.
-
-        # The offset of keypoint coordinates in the location tensor.
-        self.keypoint_coord_offset = keypoint_coord_offset
-        # The number of predicted keypoints.
-        # The dimension of each keypoint, e.g. number of values predicted for each keypoint.
-        self.num_values_per_keypoint = num_values_per_keypoint
-        # The offset of box coordinates in the location tensor.
-
-        self.score_clipping_thresh = score_clipping_thresh
-        self.min_score_thresh = min_score_thresh
-
-
-def calibrate(raw_boxes, i, anchors, options):
+def calibrate(raw_boxes, i, anchors):
     box_data = np.zeros(4)
     box_offset = i * NUM_COORDS
 
@@ -101,14 +57,14 @@ def calibrate(raw_boxes, i, anchors, options):
     return box_data
 
 
-def detect(raw_boxes, anchors_, detection_scores, options):
+def detect(raw_boxes, anchors_, detection_scores):
     detection_scores = sigmoid(np.clip(detection_scores, -100, 100))
     output_detections = []
     for i in range(NUM_BOXES):
-        if detection_scores[i] < options.min_score_thresh:
+        if detection_scores[i] < MIN_SCORE_THRESH:
             continue
 
-        box = calibrate(raw_boxes, i, anchors_, options)
+        box = calibrate(raw_boxes, i, anchors_)
         detection = Detection(
             detection_scores[i],
             box[0],
@@ -125,12 +81,6 @@ def sigmoid(x):
 
 
 def NMS(detections, threshold):
-    """nms
-    :boxes: [:,0:5]
-    :threshold: 0.5 like
-    :type: 'Min' or others
-    :returns: TODO
-    """
     if len(detections) <= 0:
         return np.array([])
     x1 = []
@@ -187,18 +137,6 @@ def gen_anchors():
 
 
 def main():
-    options = TfLiteTensorsToDetectionsCalculatorOptions(
-        num_classes=1,
-        keypoint_coord_offset=4,
-        score_clipping_thresh=100.0,
-        min_score_thresh=0.75,
-        num_values_per_keypoint=2,
-    )
-    # print('------------------------------------------------')
-    # print('TfLiteTensorsToDetectionsCalculatorOptions: ')
-    # print(options.to_string())
-    # blaze face model
-    # https://github.com/google/mediapipe/tree/master/mediapipe/models/face_detection_front.tflite
     model_path = "model.tflite"
 
     # Load TFLite model and allocate tensors.
@@ -235,7 +173,7 @@ def main():
     raw_scores = np.reshape(classificators, (-1))
 
     anchors = gen_anchors()
-    detections = detect(raw_boxes, anchors, raw_scores, options)
+    detections = detect(raw_boxes, anchors, raw_scores)
     detections = NMS(detections, 0.85)
 
     for detection in detections:
