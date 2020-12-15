@@ -7,11 +7,12 @@ import argparse
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import time
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128
 NUM_COORDS = 16
 NUM_BOXES = 896
-MIN_SCORE_THRESH = 0.75
+MIN_SCORE_THRESH = 0.5
 NMS_THRESH = 0.85
 NUM_KEYPOINT = 6
 
@@ -36,24 +37,27 @@ class Box:
             self.keypoints.append((box[4 + 2 * i], box[4 + 2 * i + 1]))
 
 
-def calibrate(raw_boxes, i, anchors):
+def calibrate(raw_boxes, index, anchors):
     box_data = np.zeros(NUM_COORDS)
-    box_offset = i * NUM_COORDS
+    box_offset = index * NUM_COORDS
 
-    # x_center,y_center 是 box 中心坐标距其对应的 anchor 的绝对偏移量
-    # w,h 是 box 的绝对大小
+    # raw_box 的 x_center,y_center 是 box 中心坐标距其对应的 anchor 中心坐标的绝
+    # 对偏移量与 anchor 的 scale 的比值. w,h 是 box 的绝对大小与 anchor 的 scale
+    # 的比值.因为考虑了 anchor 的 scale, 不同大小的 anchor 会以相同的`比例`
+    # capture 它附近的 box在 MediaPipe 的代码中, anchor 的 w,h 均为 1.0, 所以它
+    # 对特别小的物体效果不佳
     x_center = raw_boxes[box_offset]
     y_center = raw_boxes[box_offset + 1]
     w = raw_boxes[box_offset + 2]
     h = raw_boxes[box_offset + 3]
 
-    # x_center, y_center 变为 box 的绝对中心坐标 (0~1)
-    x_center = x_center / IMG_WIDTH + anchors[i].x_center
-    y_center = y_center / IMG_HEIGHT + anchors[i].y_center
+    # x_center, y_center 转换为 box 的绝对中心坐标 (0~1)
+    x_center = x_center / IMG_WIDTH * anchors[index].w + anchors[index].x_center
+    y_center = y_center / IMG_HEIGHT * anchors[index].h + anchors[index].y_center
 
     # h, w 变为 box 的绝对大小 (0~1)
-    h = h / IMG_HEIGHT
-    w = w / IMG_WIDTH
+    h = h / IMG_HEIGHT * anchors[index].h
+    w = w / IMG_WIDTH * anchors[index].w
 
     box_data[0] = x_center - w / 2.0
     box_data[1] = y_center - h / 2.0
@@ -64,9 +68,9 @@ def calibrate(raw_boxes, i, anchors):
     for j in range(NUM_KEYPOINT * 2):
         box_data[4 + j] = raw_boxes[box_offset + 4 + j]
         if j % 2 == 0:
-            box_data[4 + j] = box_data[4 + j] / IMG_WIDTH + anchors[i].x_center
+            box_data[4 + j] = box_data[4 + j] / IMG_WIDTH + anchors[index].x_center
         else:
-            box_data[4 + j] = box_data[4 + j] / IMG_HEIGHT + anchors[i].y_center
+            box_data[4 + j] = box_data[4 + j] / IMG_HEIGHT + anchors[index].y_center
 
     return box_data
 
@@ -88,7 +92,8 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def NMS(boxes, threshold):
+def NMS(boxes):
+    # Not Max Supression
     if len(boxes) <= 0:
         return np.array([])
     box = np.array(
@@ -107,8 +112,8 @@ def NMS(boxes, threshold):
     while len(I) > 0:
         best = I[-1]
         pick.append(best)
-        # 计算 box 中所有其它 box (I[0:-1]) 与 best (I[-1]) 的 IOU过滤掉 IOU >=
-        # NMS_THRESH 的 box, 因为它们与当前 best 有很大的重叠
+        # 计算 box 中所有其它 box (I[0:-1]) 与 best (I[-1]) 的 IOU, 过滤掉 IOU
+        # >= NMS_THRESH 的 box, 因为它们与当前 best 有很大的重叠
         xx1 = np.maximum(x1[best], x1[I[0:-1]])
         yy1 = np.maximum(y1[best], y1[I[0:-1]])
         xx2 = np.minimum(x2[best], x2[I[0:-1]])
@@ -117,7 +122,7 @@ def NMS(boxes, threshold):
         h = np.maximum(0.0, yy2 - yy1 + 1)
         intersection = w * h
         iou = intersection / (area[best] + area[I[0:-1]] - intersection)
-        I = I[np.where(iou <= threshold)[0]]
+        I = I[np.where(iou <= NMS_THRESH)[0]]
     return [boxes[i] for i in pick]
 
 
@@ -140,44 +145,45 @@ def gen_anchors():
     return anchors
 
 
-def main(img_file):
-    model_path = "front.tflite"
+class Inference(object):
+    def __init__(self):
+        model_path = "front.tflite"
+        # Load TFLite model and allocate tensors.
+        self.interpreter = tf.lite.Interpreter(model_path=model_path)
+        self.interpreter.allocate_tensors()
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
 
-    # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path=model_path)
-    interpreter.allocate_tensors()
-    # Get input and output tensors.
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
+        self.input_width = self.input_details[0]["shape"][1]
+        self.input_height = self.input_details[0]["shape"][2]
+        assert self.input_width == IMG_WIDTH
+        assert self.input_height == IMG_HEIGHT
 
-    img = cv2.imread(img_file)
-    # img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+    def __call__(self, img):
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        input_data = cv2.resize(img_rgb, (self.input_width, self.input_height)).astype(
+            np.float32
+        )
+        input_data = (input_data - 127.5) / 127.5
+        input_data = np.expand_dims(input_data, axis=0)
+
+        self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
+        self.interpreter.invoke()
+
+        regressors = self.interpreter.get_tensor(self.output_details[0]["index"])
+        classificators = self.interpreter.get_tensor(self.output_details[1]["index"])
+
+        raw_boxes = np.reshape(regressors, (-1))
+        raw_scores = np.reshape(classificators, (-1))
+
+        return NMS(detect(raw_boxes, gen_anchors(), raw_scores))
+
+
+def annotate_image(img, boxes):
     img_height = img.shape[0]
     img_width = img.shape[1]
 
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    input_width = input_details[0]["shape"][1]
-    input_height = input_details[0]["shape"][2]
-    assert input_width == IMG_WIDTH
-    assert input_height == IMG_HEIGHT
-
-    input_data = cv2.resize(img_rgb, (input_width, input_height)).astype(np.float32)
-    input_data = (input_data - 127.5) / 127.5
-    input_data = np.expand_dims(input_data, axis=0)
-
-    interpreter.set_tensor(input_details[0]["index"], input_data)
-    interpreter.invoke()
-    regressors = interpreter.get_tensor(output_details[0]["index"])
-    classificators = interpreter.get_tensor(output_details[1]["index"])
-
-    raw_boxes = np.reshape(regressors, (-1))
-    raw_scores = np.reshape(classificators, (-1))
-
-    anchors = gen_anchors()
-    boxes = detect(raw_boxes, anchors, raw_scores)
-    boxes = NMS(boxes, NMS_THRESH)
-    print(boxes)
     for box in boxes:
         x1 = int(img_width * box.xmin)
         x2 = int(img_width * (box.xmin + box.width))
@@ -196,7 +202,6 @@ def main(img_file):
         )
 
         for point in box.keypoints:
-            print((point[0], point[1]))
             cv2.circle(
                 img,
                 (int(img_width * point[0]), int(img_height * point[1])),
@@ -204,14 +209,41 @@ def main(img_file):
                 radius=3,
                 thickness=3,
             )
+    return img
 
+
+def inference_image(img):
+    inference = Inference()
+    img = cv2.imread(img)
+    boxes = inference(img)
+    img = annotate_image(img, boxes)
     cv2.imshow("", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
+def inference_stream():
+    inference = Inference()
+    vid = cv2.VideoCapture(0)
+    while True:
+        _, img = vid.read()
+        boxes = inference(img)
+        img = annotate_image(img, boxes)
+        cv2.imshow("", img)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    vid.release()
+    cv2.destroyAllWindows()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("file_name")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--stream", action="store_true")
+    group.add_argument("--image", type=str)
     flags = parser.parse_args()
-    main(flags.file_name)
+    if flags.image:
+        inference_image(flags.image)
+    else:
+        inference_stream()
