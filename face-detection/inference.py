@@ -112,8 +112,9 @@ def NMS(boxes):
     while len(I) > 0:
         best = I[-1]
         pick.append(best)
-        # 计算 box 中所有其它 box (I[0:-1]) 与 best (I[-1]) 的 IOU, 过滤掉 IOU
-        # >= NMS_THRESH 的 box, 因为它们与当前 best 有很大的重叠
+        # 计算 box 中 best (I[-1]) 与所有其它 box (I[0:-1]) IOU (Intersection
+        # Over Union), 过滤掉 IOU >= NMS_THRESH 的 box, 因为它们与当前 best 有很
+        # 大的重叠
         xx1 = np.maximum(x1[best], x1[I[0:-1]])
         yy1 = np.maximum(y1[best], y1[I[0:-1]])
         xx2 = np.minimum(x2[best], x2[I[0:-1]])
