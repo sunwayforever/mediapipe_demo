@@ -11,6 +11,7 @@ IMG_HEIGHT, IMG_WIDTH = 128, 128
 NUM_COORDS = 16
 NUM_BOXES = 896
 MIN_SCORE_THRESH = 0.75
+NMS_THRESH = 0.85
 
 
 class Anchor:
@@ -21,7 +22,7 @@ class Anchor:
         self.w = w
 
 
-class Detection:
+class Box:
     def __init__(self, score, xmin, ymin, width, height):
         self.score = score
         self.xmin = xmin
@@ -59,62 +60,58 @@ def calibrate(raw_boxes, i, anchors):
 
 def detect(raw_boxes, anchors_, detection_scores):
     detection_scores = sigmoid(np.clip(detection_scores, -100, 100))
-    output_detections = []
+    boxes = []
     for i in range(NUM_BOXES):
         if detection_scores[i] < MIN_SCORE_THRESH:
             continue
 
         box = calibrate(raw_boxes, i, anchors_)
-        detection = Detection(
+        box = Box(
             detection_scores[i],
             box[0],
             box[1],
             box[2],
             box[3],
         )
-        output_detections.append(detection)
-    return output_detections
+        boxes.append(box)
+    return boxes
 
 
 def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def NMS(detections, threshold):
-    if len(detections) <= 0:
+def NMS(boxes, threshold):
+    if len(boxes) <= 0:
         return np.array([])
-    x1 = []
-    x2 = []
-    y1 = []
-    y2 = []
-    s = []
-    for detection in detections:
-        x1.append(detection.xmin)
-        x2.append(detection.xmin + detection.width)
-        y1.append(detection.ymin)
-        y2.append(detection.ymin + detection.height)
-        s.append(detection.score)
-    x1 = np.array(x1)
-    x2 = np.array(x2)
-    y1 = np.array(y1)
-    y2 = np.array(y2)
-    s = np.array(s)
-    area = np.multiply(x2 - x1 + 1, y2 - y1 + 1)
-    I = np.array(s.argsort())  # read s using I
+    box = np.array(
+        [[d.xmin, d.xmin + d.width, d.ymin, d.ymin + d.height, d.score] for d in boxes]
+    )
 
+    x1 = np.array(box[:, 0])
+    x2 = np.array(box[:, 1])
+    y1 = np.array(box[:, 2])
+    y2 = np.array(box[:, 3])
+    score = np.array(box[:, 4])
+
+    area = np.multiply(x2 - x1 + 1, y2 - y1 + 1)
+    I = np.array(score.argsort())  # read score using I
     pick = []
     while len(I) > 0:
-        xx1 = np.maximum(x1[I[-1]], x1[I[0:-1]])
-        yy1 = np.maximum(y1[I[-1]], y1[I[0:-1]])
-        xx2 = np.minimum(x2[I[-1]], x2[I[0:-1]])
-        yy2 = np.minimum(y2[I[-1]], y2[I[0:-1]])
+        best = I[-1]
+        pick.append(best)
+        # 计算 box 中所有其它 box (I[0:-1]) 与 best (I[-1]) 的 IOU过滤掉 IOU >=
+        # NMS_THRESH 的 box, 因为它们与当前 best 有很大的重叠
+        xx1 = np.maximum(x1[best], x1[I[0:-1]])
+        yy1 = np.maximum(y1[best], y1[I[0:-1]])
+        xx2 = np.minimum(x2[best], x2[I[0:-1]])
+        yy2 = np.minimum(y2[best], y2[I[0:-1]])
         w = np.maximum(0.0, xx2 - xx1 + 1)
         h = np.maximum(0.0, yy2 - yy1 + 1)
-        inter = w * h
-        o = inter / (area[I[-1]] + area[I[0:-1]] - inter)
-        pick.append(I[-1])
-        I = I[np.where(o <= threshold)[0]]
-    return list(np.array(detections)[pick])
+        intersection = w * h
+        iou = intersection / (area[best] + area[I[0:-1]] - intersection)
+        I = I[np.where(iou <= threshold)[0]]
+    return [boxes[i] for i in pick]
 
 
 def gen_anchors():
@@ -174,7 +171,7 @@ def main():
 
     anchors = gen_anchors()
     detections = detect(raw_boxes, anchors, raw_scores)
-    detections = NMS(detections, 0.85)
+    detections = NMS(detections, NMS_THRESH)
 
     for detection in detections:
         x1 = int(img_width * detection.xmin)
