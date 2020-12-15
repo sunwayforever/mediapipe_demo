@@ -146,9 +146,9 @@ def gen_anchors():
     return anchors
 
 
-class Inference(object):
+class Detector(object):
     def __init__(self):
-        model_path = "front.tflite"
+        model_path = "../model/front.tflite"
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
@@ -213,18 +213,18 @@ def annotate_image(img, boxes):
     return img
 
 
-def inference_image(img):
-    inference = Inference()
+def detect_image(img):
+    detector = Detector()
     img = cv2.imread(img)
-    boxes = inference(img)
+    boxes = detector(img)
     img = annotate_image(img, boxes)
     cv2.imshow("", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
-def inference_stream():
-    inference = Inference()
+def detect_stream():
+    inference = Detector()
     vid = cv2.VideoCapture(0)
     while True:
         _, img = vid.read()
@@ -245,6 +245,6 @@ if __name__ == "__main__":
     group.add_argument("--image", type=str)
     flags = parser.parse_args()
     if flags.image:
-        inference_image(flags.image)
+        detect_image(flags.image)
     else:
-        inference_stream()
+        detect_stream()
