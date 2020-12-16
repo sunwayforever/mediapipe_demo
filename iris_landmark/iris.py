@@ -80,18 +80,38 @@ def remap(x, lo, hi, scale):
     return (x - lo) / (hi - lo + 1e-6) * scale
 
 
+eye_landmark_connections = [0, 1, 2, 3, 4, 5, 6, 7, 8, 15, 14, 13, 12, 11, 10, 9]
+
+
 def annotate_image(img, eye_surface, iris_surface):
-    for x, y, _ in eye_surface:
-        cv2.circle(img, (x, y), color=(0, 0, 255), radius=1)
+    # for x, y, _ in eye_surface:
+    #     cv2.circle(img, (x, y), color=(0, 0, 255), radius=1)
     for x, y, _ in iris_surface:
         cv2.circle(img, (x, y), 1, color=(0, 255, 0))
-    # for a, b in zip(face_landmark_connections[::2], face_landmark_connections[1::2]):
-    #     cv2.line(
-    #         img,
-    #         (surface[a][0], surface[a][1]),
-    #         (surface[b][0], surface[b][1]),
-    #         color=(0, 255, 0),
+    # eye_surface = eye_surface[:, :2]
+    # blank_img = np.zeros(shape=(5120, 5120, 3), dtype=np.uint8)
+    # for index, (a, b) in enumerate(eye_surface):
+    #     cv2.putText(
+    #         blank_img,
+    #         f"{index}",
+    #         (int(a) * 10, int(b) * 10),
+    #         cv2.FONT_HERSHEY_SIMPLEX,
+    #         0.6,
+    #         (0, 0, 255),
+    #         2,
     #     )
+    #     cv2.circle(blank_img, (int(a) * 10, int(b) * 10), 1, color=(0, 255, 0))
+    # cv2.imshow("", blank_img)
+    # while True:
+    #     if cv2.waitKey(1) & 0xFF == ord("q"):
+    #         break
+    for a, b in zip(eye_landmark_connections[::2], eye_landmark_connections[1::2]):
+        cv2.line(
+            img,
+            (eye_surface[a][0], eye_surface[a][1]),
+            (eye_surface[b][0], eye_surface[b][1]),
+            color=(0, 0, 255),
+        )
     return img
 
 
