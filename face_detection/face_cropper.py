@@ -10,8 +10,7 @@ class FaceCropper(object):
 
     def __call__(self, img):
         boxes = self.detector(img)
-        img = crop_image(img, boxes)
-        return img
+        return crop_image(img, boxes)
 
 
 def crop_image(img, boxes):

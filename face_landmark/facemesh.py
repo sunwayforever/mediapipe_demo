@@ -41,7 +41,8 @@ class Mesh(object):
         if img is None:
             return None, 0.0
 
-        input_data = cv2.resize(img, (self.input_width, self.input_height)).astype(
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        input_data = cv2.resize(img_rgb, (self.input_width, self.input_height)).astype(
             np.float32
         )
         input_data = input_data / 255.0
