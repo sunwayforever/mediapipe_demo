@@ -31,7 +31,6 @@ class Iris(object):
         self.input_height = self.input_details[0]["shape"][2]
         assert self.input_width == IMG_WIDTH
         assert self.input_height == IMG_HEIGHT
-
         self.iris_cropper = IrisCropper()
 
     def __call__(self, img):
@@ -42,7 +41,7 @@ class Iris(object):
         eye_surfaces = []
         iris_surfaces = []
         for index, (img, offset_x, offset_y, _, _) in enumerate(iris):
-            # right eye need to be horizontal flipped
+            # right eye need to be horizontally flipped
             if index == 1:
                 img = cv2.flip(img, 1)
 
@@ -70,7 +69,7 @@ class Iris(object):
                 np.reshape(iris_surface, (-1, 3)),
             )
 
-            # # right eye was horizontal flipped
+            # right eye was horizontally flipped
             if index == 1:
                 eye_surface[:, 0] = IMG_WIDTH - eye_surface[:, 0]
                 iris_surface[:, 0] = IMG_WIDTH - iris_surface[:, 0]
