@@ -12,8 +12,8 @@ import time
 IMG_HEIGHT, IMG_WIDTH = 128, 128
 NUM_COORDS = 16
 NUM_BOXES = 896
-MIN_SCORE_THRESH = 0.5
-NMS_THRESH = 0.85
+MIN_SCORE_THRESH = 0.68
+NMS_THRESH = 0.5
 NUM_KEYPOINT = 6
 
 
@@ -202,7 +202,16 @@ def annotate_image(img, boxes):
             2,
         )
 
-        for point in box.keypoints:
+        for index, point in enumerate(box.keypoints):
+            cv2.putText(
+                img,
+                f"{index}",
+                (int(img_width * point[0]), int(img_height * point[1])),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 0, 255),
+                2,
+            )
             cv2.circle(
                 img,
                 (int(img_width * point[0]), int(img_height * point[1])),

@@ -95,6 +95,7 @@ def crop_image(img, surface):
             eye_surface[:, 0].max(),
             eye_surface[:, 1].max(),
         )
+        # TODO: ~/source/mediapipe/mediapipe/calculators/image/image_cropping_calculator.cc
         margin_w, margin_h = (x2 - x1) // 2, (y2 - y1) // 2
 
         ret.append(

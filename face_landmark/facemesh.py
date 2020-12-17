@@ -37,7 +37,7 @@ class Mesh(object):
 
     def __call__(self, img):
         # cropped image, left-upper point of cropped image
-        img, offset_x, offset_y = self.face_cropper(img)
+        img, offset_x, offset_y, mat = self.face_cropper(img)
         if img is None:
             return None, 0.0
 
@@ -56,9 +56,20 @@ class Mesh(object):
         surface, prob = np.reshape(surface, (-1, 3)), np.squeeze(prob)
 
         img_height, img_width = img.shape[0], img.shape[1]
-        surface[:, 0] = (surface[:, 0] / IMG_WIDTH * img_width) + offset_x
-        surface[:, 1] = (surface[:, 1] / IMG_HEIGHT * img_height) + offset_y
-        return surface, sigmoid(prob)
+        # scale
+        surface[:, 0] = surface[:, 0] / IMG_WIDTH * img_width
+        surface[:, 1] = surface[:, 1] / IMG_HEIGHT * img_height
+        # rotate
+        tmp_surface = surface[:, 0:2]
+        tmp_surface = np.concatenate(
+            (tmp_surface, np.ones((tmp_surface.shape[0], 1))), axis=1
+        )
+        tmp_surface = (mat @ tmp_surface.T).T
+        surface = np.concatenate((tmp_surface, surface[:, 2:3]), axis=1)
+        # shift
+        surface[:, 0] += offset_x
+        surface[:, 1] += offset_y
+        return surface.astype("float32"), sigmoid(prob)
 
 
 def remap(x, lo, hi, scale):
