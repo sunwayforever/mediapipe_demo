@@ -62,6 +62,5 @@ if __name__ == "__main__":
     img = cv2.imread(flags.file_name)
     img, _, _, _ = cropper(img)
     cv2.imshow("", img)
-    while True:
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+    while cv2.waitKey(1) & 0xFF != ord("q"):
+        pass

@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
+from pose_estimator import PoseEstimator
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128
 NUM_COORDS = 16
@@ -219,26 +220,44 @@ def annotate_image(img, boxes):
                 radius=3,
                 thickness=3,
             )
-    return img
+
+
+def estimate_pose(estimator, img, boxes):
+    for box in boxes:
+        points = np.reshape(box.keypoints, (-1, 2))
+        points = points * np.array([img.shape[1], img.shape[0]])
+        pose = estimator.solve(points)
+        estimator.draw_stick(img, points, pose[0], pose[1])
 
 
 def detect_image(img):
     detector = Detector()
     img = cv2.imread(img)
+    pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
     boxes = detector(img)
-    img = annotate_image(img, boxes)
+
+    annotate_image(img, boxes)
+    estimate_pose(pose_estimator, img, boxes)
+
     cv2.imshow("", img)
-    cv2.waitKey(0)
+    while cv2.waitKey(1) & 0xFF != ord("q"):
+        pass
     cv2.destroyAllWindows()
 
 
 def detect_stream():
     detector = Detector()
     vid = cv2.VideoCapture(0)
+    _, img = vid.read()
+    pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
     while True:
         _, img = vid.read()
+        img = cv2.flip(img, 2)
         boxes = detector(img)
-        img = annotate_image(img, boxes)
+
+        annotate_image(img, boxes)
+        estimate_pose(pose_estimator, img, boxes)
+
         cv2.imshow("", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break

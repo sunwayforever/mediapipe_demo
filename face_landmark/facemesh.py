@@ -389,6 +389,7 @@ def mesh_stream():
         succ, img = vid.read()
         if not succ:
             continue
+        img = cv2.flip(img, 2)
         surface, prob = mesh(img)
         if prob >= MIN_PROB_THRESH:
             img = annotate_image(img, surface)

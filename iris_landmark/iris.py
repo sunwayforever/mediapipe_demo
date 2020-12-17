@@ -131,6 +131,7 @@ def iris_stream():
         succ, img = vid.read()
         if not succ:
             continue
+        img = cv2.flip(img, 2)
         eye_surface, iris_surface = iris(img)
         if eye_surface is not None:
             img = annotate_image(img, eye_surface, iris_surface)

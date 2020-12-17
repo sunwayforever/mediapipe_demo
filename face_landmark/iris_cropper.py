@@ -128,6 +128,5 @@ if __name__ == "__main__":
         cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
 
     cv2.imshow("", img)
-    while True:
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+    while cv2.waitKey(1) & 0xFF != ord("q"):
+        pass
