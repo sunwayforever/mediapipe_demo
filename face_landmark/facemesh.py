@@ -55,6 +55,23 @@ class Mesh(object):
         prob = self.interpreter.get_tensor(self.output_details[1]["index"])
         surface, prob = np.reshape(surface, (-1, 3)), np.squeeze(prob)
 
+        # test:
+        # blank_image = np.zeros((1920, 1920))
+        # for index, (x, y, z) in enumerate(surface):
+        #     print(x, y, z)
+        #     cv2.putText(
+        #         blank_image,
+        #         f"{index}",
+        #         (int(x * 10), int(y * 10)),
+        #         cv2.FONT_HERSHEY_SIMPLEX,
+        #         0.3,
+        #         (255, 255, 255),
+        #         1,
+        #     )
+        # cv2.imshow("", blank_image)
+        # while True:
+        #     if cv2.waitKey(1) & 0xFF == ord("q"):
+        #         break
         img_height, img_width = img.shape[0], img.shape[1]
         # scale
         surface[:, 0] = surface[:, 0] / IMG_WIDTH * img_width
