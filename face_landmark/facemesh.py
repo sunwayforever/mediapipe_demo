@@ -403,9 +403,7 @@ def mesh_stream():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--stream", action="store_true")
-    group.add_argument("--image", type=str)
+    parser.add_argument("--image", type=str)
     flags = parser.parse_args()
     if flags.image:
         mesh_image(flags.image)

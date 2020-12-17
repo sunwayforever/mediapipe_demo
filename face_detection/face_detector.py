@@ -230,16 +230,20 @@ def estimate_pose(estimator, img, boxes):
         estimator.draw_stick(img, points, pose[0], pose[1])
 
 
+def do_detect(detector, pose_estimator, img):
+    boxes = detector(img)
+    annotate_image(img, boxes)
+    estimate_pose(pose_estimator, img, boxes)
+    cv2.imshow("", img)
+
+
 def detect_image(img):
     detector = Detector()
     img = cv2.imread(img)
     pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
-    boxes = detector(img)
 
-    annotate_image(img, boxes)
-    estimate_pose(pose_estimator, img, boxes)
+    do_detect(detector, pose_estimator, img)
 
-    cv2.imshow("", img)
     while cv2.waitKey(1) & 0xFF != ord("q"):
         pass
     cv2.destroyAllWindows()
@@ -253,12 +257,9 @@ def detect_stream():
     while True:
         _, img = vid.read()
         img = cv2.flip(img, 2)
-        boxes = detector(img)
 
-        annotate_image(img, boxes)
-        estimate_pose(pose_estimator, img, boxes)
+        do_detect(detector, pose_estimator, img)
 
-        cv2.imshow("", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
@@ -268,9 +269,7 @@ def detect_stream():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--stream", action="store_true")
-    group.add_argument("--image", type=str)
+    parser.add_argument("--image", type=str)
     flags = parser.parse_args()
     if flags.image:
         detect_image(flags.image)

@@ -38,30 +38,14 @@ class PoseEstimator:
         # Assuming no lens distortion
         self.dist_coeffs = np.zeros((4, 1))
 
-        # Rotation vector and translation vector
-        self.r_vec = None
-        self.t_vec = None
-
     def solve(self, image_points):
-        if self.r_vec is None:
-            (success, rotation_vector, translation_vector) = cv2.solvePnP(
-                self.model_points,
-                image_points,
-                self.camera_matrix,
-                self.dist_coeffs,
-            )
-            self.r_vec = rotation_vector
-            self.t_vec = translation_vector
-
-        (success, rotation_vector, translation_vector) = cv2.solvePnP(
+        success, rotation_vector, translation_vector = cv2.solvePnP(
             self.model_points,
             image_points,
             self.camera_matrix,
             self.dist_coeffs,
-            rvec=self.r_vec,
-            tvec=self.t_vec,
-            useExtrinsicGuess=True,
         )
+
         return (rotation_vector, translation_vector)
 
     def draw_stick(
