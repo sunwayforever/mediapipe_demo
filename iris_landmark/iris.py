@@ -96,6 +96,12 @@ eye_landmark_connections = [0, 1, 2, 3, 4, 5, 6, 7, 8, 15, 14, 13, 12, 11, 10, 9
 
 
 def annotate_image(img, eye_surfaces, iris_surfaces):
+    # down = eye_surfaces[0][3]
+    # up = eye_surfaces[0][12]
+    # left = eye_surfaces[0][0]
+    # right = eye_surfaces[0][8]
+    # center = iris_surfaces[0][0]
+
     for eye_surface, iris_surface in zip(eye_surfaces, iris_surfaces):
         for x, y, _ in iris_surface:
             cv2.circle(img, (x, y), 1, color=(0, 255, 0))
