@@ -9,6 +9,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
 from pose_estimator import PoseEstimator
+import util
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128
 NUM_COORDS = 16
@@ -35,7 +36,7 @@ class Box:
         self.height = box[3]
         self.keypoints = []
         for i in range(NUM_KEYPOINT):
-            self.keypoints.append((box[4 + 2 * i], box[4 + 2 * i + 1]))
+            self.keypoints.append([box[4 + 2 * i], box[4 + 2 * i + 1]])
 
 
 def calibrate(raw_boxes, index, anchors):
@@ -162,15 +163,18 @@ class Detector(object):
         assert self.input_height == IMG_HEIGHT
 
     def __call__(self, img):
+        # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # img_rgb = np.stack([img_rgb, img_rgb, img_rgb], axis=2)
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # TODO: should keep aspect ratio
         # [[file:~/source/mediapipe/mediapipe/modules/face_detection/face_detection_front_cpu.pbtxt::keep_aspect_ratio: true]]
-        input_data = cv2.resize(img_rgb, (self.input_width, self.input_height)).astype(
-            np.float32
+        input_data, v_padding, h_padding = util.resize(
+            img_rgb, self.input_width, self.input_height
         )
         input_data = (input_data - 127.5) / 127.5
         input_data = np.expand_dims(input_data, axis=0)
+        input_data = input_data.astype(np.float32)
 
         self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
         self.interpreter.invoke()
@@ -181,7 +185,32 @@ class Detector(object):
         raw_boxes = np.reshape(regressors, (-1))
         raw_scores = np.reshape(classificators, (-1))
 
-        return NMS(detect(raw_boxes, gen_anchors(), raw_scores))
+        boxes = NMS(detect(raw_boxes, gen_anchors(), raw_scores))
+
+        for box in boxes:
+            box.xmin = ((box.xmin - h_padding) * self.input_width) / (
+                (1 - 2 * h_padding) * self.input_width
+            )
+            box.ymin = ((box.ymin - v_padding) * self.input_height) / (
+                (1 - 2 * v_padding) * self.input_height
+            )
+            box.width = (
+                box.width * self.input_width / ((1 - 2 * h_padding) * self.input_width)
+            )
+            box.height = (
+                box.height
+                * self.input_height
+                / ((1 - 2 * v_padding) * self.input_height)
+            )
+            for point in box.keypoints:
+                point[0] = ((point[0] - h_padding) * self.input_width) / (
+                    (1 - 2 * h_padding) * self.input_width
+                )
+                point[1] = ((point[1] - v_padding) * self.input_height) / (
+                    (1 - 2 * v_padding) * self.input_height
+                )
+
+        return boxes
 
 
 def annotate_image(img, boxes):
