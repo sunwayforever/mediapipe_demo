@@ -29,7 +29,7 @@ def crop_image(img, boxes):
     y1 = int(img_height * box.ymin)
     y2 = int(img_height * (box.ymin + box.height))
 
-    # ~/source/mediapipe/mediapipe/modules/face_landmark/face_detection_front_detection_to_roi.pbtxt
+    # [[file:~/source/mediapipe/mediapipe/modules/face_landmark/face_detection_front_detection_to_roi.pbtxt::\[mediapipe.RectTransformationCalculatorOptions.ext\] {]]
     margin_w, margin_h = (x2 - x1) // 4, (y2 - y1) // 4
 
     img = img[

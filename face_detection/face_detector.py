@@ -167,7 +167,6 @@ class Detector(object):
         # img_rgb = np.stack([img_rgb, img_rgb, img_rgb], axis=2)
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        # TODO: should keep aspect ratio
         # [[file:~/source/mediapipe/mediapipe/modules/face_detection/face_detection_front_cpu.pbtxt::keep_aspect_ratio: true]]
         input_data, v_padding, h_padding = util.resize(
             img_rgb, self.input_width, self.input_height
@@ -187,28 +186,30 @@ class Detector(object):
 
         boxes = NMS(detect(raw_boxes, gen_anchors(), raw_scores))
 
+        restore_x = (
+            lambda x: (x - h_padding)
+            * self.input_width
+            / ((1 - 2 * h_padding) * self.input_width)
+        )
+        restore_y = (
+            lambda y: (y - v_padding)
+            * self.input_height
+            / ((1 - 2 * v_padding) * self.input_height)
+        )
+        restore_width = (
+            lambda w: w * self.input_width / ((1 - 2 * h_padding) * self.input_width)
+        )
+        restore_height = (
+            lambda h: h * self.input_height / ((1 - 2 * v_padding) * self.input_height)
+        )
         for box in boxes:
-            box.xmin = ((box.xmin - h_padding) * self.input_width) / (
-                (1 - 2 * h_padding) * self.input_width
-            )
-            box.ymin = ((box.ymin - v_padding) * self.input_height) / (
-                (1 - 2 * v_padding) * self.input_height
-            )
-            box.width = (
-                box.width * self.input_width / ((1 - 2 * h_padding) * self.input_width)
-            )
-            box.height = (
-                box.height
-                * self.input_height
-                / ((1 - 2 * v_padding) * self.input_height)
-            )
+            box.xmin = restore_x(box.xmin)
+            box.ymin = restore_y(box.ymin)
+            box.width = restore_width(box.width)
+            box.height = restore_height(box.height)
             for point in box.keypoints:
-                point[0] = ((point[0] - h_padding) * self.input_width) / (
-                    (1 - 2 * h_padding) * self.input_width
-                )
-                point[1] = ((point[1] - v_padding) * self.input_height) / (
-                    (1 - 2 * v_padding) * self.input_height
-                )
+                point[0] = restore_x(point[0])
+                point[1] = restore_y(point[1])
 
         return boxes
 
