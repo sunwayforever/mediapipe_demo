@@ -3,6 +3,7 @@
 # 2020-12-17 17:41
 import numpy as np
 import cv2
+from stablizer import Stablizer
 
 
 class PoseEstimator:
@@ -37,15 +38,48 @@ class PoseEstimator:
 
         # Assuming no lens distortion
         self.dist_coeffs = np.zeros((4, 1))
+        self.rotation_stablizers = [Stablizer(2, 1) for _ in range(3)]
+        self.translation_stablizers = [Stablizer(2, 1) for _ in range(3)]
+        self.r_vec = None
+        self.t_vec = None
 
     def solve(self, image_points):
-        success, rotation_vector, translation_vector = cv2.solvePnP(
+        if self.r_vec is None:
+            _, rotation_vector, translation_vector = cv2.solvePnP(
+                self.model_points,
+                image_points,
+                self.camera_matrix,
+                self.dist_coeffs,
+            )
+            self.r_vec = rotation_vector
+            self.t_vec = translation_vector
+
+        _, rotation_vector, translation_vector = cv2.solvePnP(
             self.model_points,
             image_points,
             self.camera_matrix,
             self.dist_coeffs,
+            rvec=self.r_vec,
+            tvec=self.t_vec,
+            useExtrinsicGuess=True,
         )
 
+        rotation_vector = np.array(
+            [
+                stablizer.update(np.array([x], dtype=np.float32))
+                for x, stablizer in zip(
+                    rotation_vector.flatten(), self.rotation_stablizers
+                )
+            ]
+        )
+        translation_vector = np.array(
+            [
+                stablizer.update(np.array([x], dtype=np.float32))
+                for x, stablizer in zip(
+                    translation_vector.flatten(), self.translation_stablizers
+                )
+            ]
+        )
         return (rotation_vector, translation_vector)
 
     def draw_stick(
