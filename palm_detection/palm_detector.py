@@ -8,14 +8,13 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
-from pose_estimator import PoseEstimator
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128
-NUM_COORDS = 16
+NUM_COORDS = 18
 NUM_BOXES = 896
 MIN_SCORE_THRESH = 0.68
 NMS_THRESH = 0.5
-NUM_KEYPOINT = 6
+NUM_KEYPOINT = 7
 
 
 class Anchor:
@@ -65,7 +64,6 @@ def calibrate(raw_boxes, index, anchors):
     box_data[2] = w
     box_data[3] = h
 
-    # for 6 keypoint
     for j in range(NUM_KEYPOINT * 2):
         box_data[4 + j] = raw_boxes[box_offset + 4 + j]
         if j % 2 == 0:
@@ -149,7 +147,7 @@ def gen_anchors():
 
 class Detector(object):
     def __init__(self):
-        model_path = "../model/face_detection_front.tflite"
+        model_path = "../model/palm_detection.tflite"
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
@@ -165,7 +163,6 @@ class Detector(object):
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # TODO: should keep aspect ratio
-        # [[file:~/source/mediapipe/mediapipe/modules/face_detection/face_detection_front_cpu.pbtxt::keep_aspect_ratio: true]]
         input_data = cv2.resize(img_rgb, (self.input_width, self.input_height)).astype(
             np.float32
         )
@@ -204,7 +201,6 @@ def annotate_image(img, boxes):
             (0, 0, 255),
             2,
         )
-
         for index, point in enumerate(box.keypoints):
             cv2.putText(
                 img,
@@ -224,27 +220,17 @@ def annotate_image(img, boxes):
             )
 
 
-def estimate_pose(estimator, img, boxes):
-    for box in boxes:
-        points = np.reshape(box.keypoints, (-1, 2))
-        points = points * np.array([img.shape[1], img.shape[0]])
-        pose = estimator.solve(points)
-        estimator.draw_stick(img, points, pose[0], pose[1])
-
-
-def do_detect(detector, pose_estimator, img):
+def do_detect(detector, img):
     boxes = detector(img)
     annotate_image(img, boxes)
-    estimate_pose(pose_estimator, img, boxes)
     cv2.imshow("", img)
 
 
 def detect_image(img):
     detector = Detector()
     img = cv2.imread(img)
-    pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
 
-    do_detect(detector, pose_estimator, img)
+    do_detect(detector, img)
 
     while cv2.waitKey(1) & 0xFF != ord("q"):
         pass
@@ -255,13 +241,10 @@ def detect_stream():
     detector = Detector()
     vid = cv2.VideoCapture(0)
     _, img = vid.read()
-    pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
     while True:
         _, img = vid.read()
         img = cv2.flip(img, 2)
-
-        do_detect(detector, pose_estimator, img)
-
+        do_detect(detector, img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
