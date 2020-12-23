@@ -8,11 +8,34 @@ import cv2
 
 class FaceCropper(object):
     def __init__(self):
+        self.boxes = None
+        self.img = None
         self.detector = Detector()
 
+    @staticmethod
+    def _distance(a, b):
+        if a is None or b is None:
+            return 100000
+        if a.shape != b.shape:
+            a = cv2.resize(a, (256, 256))
+            b = cv2.resize(b, (256, 256))
+        return cv2.norm(a, b)
+
+    def _crop_image(self, img, tracking):
+        if self.boxes is None or not tracking:
+            print("lose track")
+            self.boxes = self.detector(img)
+        ret = crop_image(img, self.boxes)
+        if self.img is None or not tracking:
+            self.img = ret[0]
+        return ret
+
     def __call__(self, img):
-        boxes = self.detector(img)
-        return crop_image(img, boxes)
+        ret = self._crop_image(img, True)
+        distance = FaceCropper._distance(ret[0], self.img)
+        if distance > 5000:
+            ret = self._crop_image(img, False)
+        return ret
 
 
 def crop_image(img, boxes):

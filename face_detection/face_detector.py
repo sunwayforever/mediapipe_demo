@@ -133,7 +133,13 @@ def NMS(boxes):
     return [boxes[i] for i in pick]
 
 
+anchors = None
+
+
 def gen_anchors():
+    global anchors
+    if anchors is not None:
+        return anchors
     anchors = []
     for stride, count in zip([8, 16], [1, 3]):
         feature_map_height = math.ceil(1.0 * IMG_HEIGHT / stride)
@@ -155,7 +161,6 @@ def gen_anchors():
 class Detector(object):
     def __init__(self):
         model_path = "../model/face_detection_front.tflite"
-        # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
@@ -214,14 +219,12 @@ class Detector(object):
             for point in box.keypoints:
                 point[0] = restore_x(point[0])
                 point[1] = restore_y(point[1])
-
         return boxes
 
 
 def annotate_image(img, boxes):
     img_height = img.shape[0]
     img_width = img.shape[1]
-    util.show_fps(img)
     for box in boxes:
         x1 = int(img_width * box.xmin)
         x2 = int(img_width * (box.xmin + box.width))

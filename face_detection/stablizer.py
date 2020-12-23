@@ -7,16 +7,11 @@ import numpy as np
 
 class Stablizer:
     def __init__(self, state_num=2, measure_num=1, cov_process=0.01, cov_measure=0.01):
-
-        # Store the parameters.
-        # 隐藏状态
+        # 隐藏状态: state_num
         # X 为 [[x][v_x]
-        self.state_num = state_num
-        # 观测状态
+        # 观测状态: measure_num
         # Z 为 [[x]]
-        self.measure_num = measure_num
 
-        # The filter itself.
         self.filter = cv2.KalmanFilter(state_num, measure_num, 0)
 
         # 转移矩阵: FX+Q

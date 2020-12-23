@@ -5,6 +5,7 @@ import cv2
 import argparse
 import numpy as np
 import time
+from collections import defaultdict
 
 
 def resize(img, roi_width, roi_height):
@@ -37,24 +38,38 @@ def resize(img, roi_width, roi_height):
     return img, v_padding / roi_width, h_padding / roi_height
 
 
-prev_time = -1
+prev_times = defaultdict(lambda: -1)
+benchmarks = {}
 
 
-def show_fps(img):
-    global prev_time
+def benchmark_begin(
+    category,
+):
+    global prev_times
+    prev_times[category] = time.time()
+
+
+def benchmark_end(category):
+    global benchmarks
     curr = time.time()
-    prev_time, delta = curr, curr - prev_time
-    fps = int(1 / delta)
+    delta = int((curr - prev_times[category]) * 1000)
+    benchmarks[category] = delta
 
-    cv2.putText(
-        img,
-        f"fps: {fps}",
-        (20, 20),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        (0, 0, 255),
-        2,
-    )
+
+def show_benchmark(img):
+    global benchmarks
+    y = 0
+    for category, v in benchmarks.items():
+        y += 20
+        cv2.putText(
+            img,
+            f"{category}: {v} ms",
+            (20, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 0, 255),
+            2,
+        )
 
 
 if __name__ == "__main__":

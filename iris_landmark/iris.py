@@ -104,7 +104,6 @@ def annotate_image(img, eye_surfaces, iris_surfaces):
     # right = eye_surfaces[0][8]
     # center = iris_surfaces[0][0]
 
-    util.show_fps(img)
     for eye_surface, iris_surface in zip(eye_surfaces, iris_surfaces):
         for x, y, _ in iris_surface:
             cv2.circle(img, (x, y), 1, color=(0, 255, 0))

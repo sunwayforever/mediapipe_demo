@@ -190,7 +190,6 @@ def annotate_image(img, boxes):
     img_height = img.shape[0]
     img_width = img.shape[1]
 
-    util.show_fps(img)
     for box in boxes:
         x1 = int(img_width * box.xmin)
         x2 = int(img_width * (box.xmin + box.width))

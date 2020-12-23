@@ -73,7 +73,7 @@ class IrisCropper(object):
         self.mesh = Mesh()
 
     def __call__(self, img):
-        surface, prob = self.mesh(img)
+        surface = self.mesh(img)
         return crop_image(img, surface)
 
 

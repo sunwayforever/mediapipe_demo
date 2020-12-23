@@ -39,9 +39,13 @@ class Mesh(object):
 
     def __call__(self, img):
         # cropped image, left-upper point of cropped image
+        util.benchmark_begin("crop+mesh")
+        util.benchmark_begin("crop")
         img, offset_x, offset_y, mat = self.face_cropper(img)
+        util.benchmark_end("crop")
+
         if img is None:
-            return None, 0.0
+            return None
 
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         input_data = cv2.resize(img_rgb, (self.input_width, self.input_height)).astype(
@@ -56,7 +60,8 @@ class Mesh(object):
         surface = self.interpreter.get_tensor(self.output_details[0]["index"])
         prob = self.interpreter.get_tensor(self.output_details[1]["index"])
         surface, prob = np.reshape(surface, (-1, 3)), np.squeeze(prob)
-
+        if sigmoid(prob) < MIN_PROB_THRESH:
+            return None
         # test:
         # blank_image = np.zeros((1920, 1920))
         # for index, (x, y, z) in enumerate(surface):
@@ -88,7 +93,8 @@ class Mesh(object):
         # shift
         surface[:, 0] += offset_x
         surface[:, 1] += offset_y
-        return surface.astype("float32"), sigmoid(prob)
+        util.benchmark_end("crop+mesh")
+        return surface.astype("float32")
 
 
 def remap(x, lo, hi, scale):
@@ -354,8 +360,9 @@ face_landmark_connections = [
 
 
 def annotate_image(img, surface):
+    if surface is None:
+        return
     z_min, z_max = surface[:, 2].min(), surface[:, 2].max()
-    util.show_fps(img)
     for x, y, z in surface:
         color = 255 - remap(z, z_min, z_max, 255)
         cv2.circle(img, (x, y), color=(color, color, 0), radius=1, thickness=1)
@@ -376,9 +383,9 @@ def sigmoid(x):
 def mesh_image(img):
     mesh = Mesh()
     img = cv2.imread(img)
-    surface, prob = mesh(img)
-    if prob >= MIN_PROB_THRESH:
-        img = annotate_image(img, surface)
+    surface = mesh(img)
+    annotate_image(img, surface)
+    util.show_benchmark(img)
     cv2.imshow("", img)
     while cv2.waitKey(1) & 0xFF != ord("q"):
         pass
@@ -393,9 +400,9 @@ def mesh_stream():
         if not succ:
             continue
         img = cv2.flip(img, 2)
-        surface, prob = mesh(img)
-        if prob >= MIN_PROB_THRESH:
-            img = annotate_image(img, surface)
+        surface = mesh(img)
+        annotate_image(img, surface)
+        util.show_benchmark(img)
         cv2.imshow("", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
