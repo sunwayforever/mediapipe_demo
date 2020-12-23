@@ -9,6 +9,10 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
 from pose_estimator import PoseEstimator
+import sys
+import os
+
+sys.path.append(os.path.abspath("../util"))
 import util
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128
@@ -217,7 +221,7 @@ class Detector(object):
 def annotate_image(img, boxes):
     img_height = img.shape[0]
     img_width = img.shape[1]
-
+    util.show_fps(img)
     for box in boxes:
         x1 = int(img_width * box.xmin)
         x2 = int(img_width * (box.xmin + box.width))

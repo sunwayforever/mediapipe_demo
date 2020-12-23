@@ -11,8 +11,10 @@ import time
 import sys
 import os
 
+sys.path.append(os.path.abspath("../util"))
 sys.path.append(os.path.abspath("../face_detection"))
 from face_cropper import FaceCropper
+import util
 
 IMG_WIDTH = 192
 IMG_HEIGHT = 192
@@ -353,6 +355,7 @@ face_landmark_connections = [
 
 def annotate_image(img, surface):
     z_min, z_max = surface[:, 2].min(), surface[:, 2].max()
+    util.show_fps(img)
     for x, y, z in surface:
         color = 255 - remap(z, z_min, z_max, 255)
         cv2.circle(img, (x, y), color=(color, color, 0), radius=1, thickness=1)

@@ -8,11 +8,16 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
+import sys
+import os
+
+sys.path.append(os.path.abspath("../util"))
+import util
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128
 NUM_COORDS = 18
 NUM_BOXES = 896
-MIN_SCORE_THRESH = 0.68
+MIN_SCORE_THRESH = 0.8
 NMS_THRESH = 0.5
 NUM_KEYPOINT = 7
 
@@ -185,6 +190,7 @@ def annotate_image(img, boxes):
     img_height = img.shape[0]
     img_width = img.shape[1]
 
+    util.show_fps(img)
     for box in boxes:
         x1 = int(img_width * box.xmin)
         x2 = int(img_width * (box.xmin + box.width))

@@ -4,6 +4,7 @@
 import cv2
 import argparse
 import numpy as np
+import time
 
 
 def resize(img, roi_width, roi_height):
@@ -34,6 +35,26 @@ def resize(img, roi_width, roi_height):
         value=(0, 0, 0),
     )
     return img, v_padding / roi_width, h_padding / roi_height
+
+
+prev_time = -1
+
+
+def show_fps(img):
+    global prev_time
+    curr = time.time()
+    prev_time, delta = curr, curr - prev_time
+    fps = int(1 / delta)
+
+    cv2.putText(
+        img,
+        f"fps: {fps}",
+        (20, 20),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (0, 0, 255),
+        2,
+    )
 
 
 if __name__ == "__main__":

@@ -11,8 +11,10 @@ import time
 import sys
 import os
 
+sys.path.append(os.path.abspath("../util"))
 sys.path.append(os.path.abspath("../face_landmark"))
 from iris_cropper import IrisCropper
+import util
 
 IMG_WIDTH = 64
 IMG_HEIGHT = 64
@@ -102,6 +104,7 @@ def annotate_image(img, eye_surfaces, iris_surfaces):
     # right = eye_surfaces[0][8]
     # center = iris_surfaces[0][0]
 
+    util.show_fps(img)
     for eye_surface, iris_surface in zip(eye_surfaces, iris_surfaces):
         for x, y, _ in iris_surface:
             cv2.circle(img, (x, y), 1, color=(0, 255, 0))
