@@ -1,0 +1,694 @@
+
+#define _CRT_SECURE_NO_WARNINGS
+
+#include "demo.h"
+
+using namespace std;
+using namespace InuDev;
+
+std::shared_ptr<CInuSensorExt> sensor;
+std::shared_ptr<CImageStream> webcamStream;
+std::shared_ptr<CImageStream> webcamStream1;
+std::shared_ptr<CCnnStream> cnnStream;
+std::shared_ptr<CImageStream> resizeStream;
+
+static int frames_per_sec = FRAMES_PER_SEC;
+static char current_directorty[200];
+
+static string qdata_dir_names[QDATA_NUM] = {"SSD_NET"};
+static int net_types[QDATA_NUM] = {SSD_NET_ID};
+static CCnnLoadParams::ECnnChannelSwap ChannelSwaps[QDATA_NUM] = {
+    CCnnLoadParams::CNN_NETWORK_CHANNEL_SWAP};
+
+static int active_net_id = 0;
+static bool Gl_fps_display = true;
+
+static char classes[QDATA_NUM][CLASSIFICATION_MAX_CLASSES][MAX_LABEL_LENGTH];
+static int number_of_classes[QDATA_NUM] = {0};
+
+static char class_text[MAX_LABEL_LENGTH];
+
+static char fps_line[100];
+
+static int image_width = 640;
+static int image_height = 480;
+
+static char object_names[OBJECT_MAX_NUMBER][OBJECT_DETECTION_NAME_LEN];
+static int object_min_x[OBJECT_MAX_NUMBER], object_max_x[OBJECT_MAX_NUMBER],
+    object_min_y[OBJECT_MAX_NUMBER], object_max_y[OBJECT_MAX_NUMBER];
+static int object_label[OBJECT_MAX_NUMBER];
+static float object_confidence[OBJECT_MAX_NUMBER];
+static int num_of_objects = 0;
+
+static bool flipped = false;
+static int module_type = MODULE_C0;
+
+#define MAX_COLORS 10
+static CvScalar class_colors[MAX_COLORS]{
+    {0, 0, 255},     {255, 0, 255}, {0, 255, 0},   {255, 0, 0}, {0, 255, 255},
+    {192, 192, 192}, {0, 0, 128},   {128, 0, 128}, {128, 0, 0}, {0, 128, 128}};
+
+#ifndef _MSC_VER
+static struct timeval prev_cdnn_timestamp, new_cdnn_timestamp;
+
+/* void cdnn_timestamp_init(void) */
+void cdnn_timestamp_init(void) {
+    gettimeofday(&prev_cdnn_timestamp, NULL);
+    new_cdnn_timestamp = prev_cdnn_timestamp;
+}
+
+/* add_cdnn_timestamp */
+void add_cdnn_timestamp(void) {
+    prev_cdnn_timestamp = new_cdnn_timestamp;
+    gettimeofday(&new_cdnn_timestamp, NULL);
+}
+
+/* cdnn_compute_fps */
+void cdnn_compute_fps(void) {
+    int time_diff;
+    float cdnn_fps;
+    static int fps_counter = 0;
+    static float time_diff_sum = 0;
+    static unsigned int start_counter = 0;
+
+    /* Skip the first frames */
+    if (start_counter < 2) {
+        start_counter++;
+        return;
+    }
+
+    time_diff =
+        (new_cdnn_timestamp.tv_sec - prev_cdnn_timestamp.tv_sec) * 1000000 +
+        (new_cdnn_timestamp.tv_usec - prev_cdnn_timestamp.tv_usec);
+
+    if (time_diff > 0) {
+        time_diff_sum += time_diff;
+        fps_counter++;
+        if (time_diff_sum > 1000000) {
+            cdnn_fps = 1000000. / (time_diff_sum / fps_counter);
+            sprintf(fps_line, "FPS: %2.2f", cdnn_fps);
+            // fps_counter = 0;
+            // time_diff_sum = 0;
+        }
+    } else {
+        fps_line[0] = '\0';
+    }
+}
+
+#else
+static SYSTEMTIME prev_cdnn_timestamp = {0, 0, 0, 0, 0, 0, 0, 0},
+                  new_cdnn_timestamp = {0, 0, 0, 0, 0, 0, 0, 0};
+
+/* add_cdnn_timestamp */
+void add_cdnn_timestamp(void) {
+    prev_cdnn_timestamp = new_cdnn_timestamp;
+    GetSystemTime(&new_cdnn_timestamp);
+}
+
+/* cdnn_compute_fps */
+void cdnn_compute_fps(void) {
+    int time_diff;
+    float cdnn_fps;
+    static int fps_counter = 0;
+    static float time_diff_sum = 0;
+    static unsigned int start_counter = 0;
+
+    /* Skip the first frames */
+    if (start_counter < 2) {
+        start_counter++;
+        return;
+    }
+
+    time_diff =
+        (new_cdnn_timestamp.wSecond - prev_cdnn_timestamp.wSecond) * 1000 +
+        (new_cdnn_timestamp.wMilliseconds - prev_cdnn_timestamp.wMilliseconds);
+
+    if (time_diff > 0) {
+        time_diff_sum += time_diff;
+        fps_counter++;
+        if (time_diff_sum > 1000) {
+            cdnn_fps = (float)1000 / (time_diff_sum / fps_counter);
+            sprintf(fps_line, "FPS: %2.2f", cdnn_fps);
+            // fps_counter = 0;
+            // time_diff_sum = 0;
+        }
+    } else {
+        fps_line[0] = '\0';
+    }
+}
+
+#endif
+
+/* ssd_parser */
+void ssd_parser(CCnnFrame::CCnnFrameHdr *header, unsigned char *blob) {
+    float total = 0;
+    BBOX *boxes;
+    int valid_count;
+
+    if ((header->TotalResultSize % sizeof(BBOX)) ==
+        4) {  // New API (Synopsys version 2019_3)
+        valid_count = ((int *)blob)[0];
+        boxes = (BBOX *)(blob + 4);
+    } else {
+        valid_count = OBJECT_MAX_NUMBER;  // Old API
+        boxes = (BBOX *)blob;
+    }
+
+    // printf("Valid count:%d  TotalResultSize:%d\n", valid_count,
+    // header->TotalResultSize);
+
+    class_text[0] = '\0';
+
+    mutex_lock(MUTEX_DISPLAY);
+
+    num_of_objects = 0;
+    for (int i = 0; i < valid_count; i++) {
+        if (boxes[i].confidence > CONF_THRESHOLD) {
+            /* Check for valid label value */
+            if (boxes[i].label >= number_of_classes[header->NetworkId] ||
+                boxes[i].label < 0) {
+                printf("ssd_parser: Invalid label: %d at index %d\n",
+                       boxes[i].label, i);
+                break;
+            }
+
+            object_label[num_of_objects] = boxes[i].label;
+            object_min_x[num_of_objects] = (int)(boxes[i].x_min * image_width);
+            object_max_x[num_of_objects] = (int)(boxes[i].x_max * image_width);
+            object_min_y[num_of_objects] = (int)(boxes[i].y_min * image_height);
+            object_max_y[num_of_objects] = (int)(boxes[i].y_max * image_height);
+            object_confidence[num_of_objects] = boxes[i].confidence;
+            strcpy(object_names[num_of_objects],
+                   classes[active_net_id][boxes[i].label]);
+            // printf("box %d label:%d - %s conf:%f x_min:%d y_min:%d x_max:%d
+            // y_max:%d\n", 	i, object_label[num_of_objects],
+            // object_names[num_of_objects], object_confidence[num_of_objects],
+            //	object_min_x[num_of_objects], object_min_y[num_of_objects],
+            // object_max_x[num_of_objects], object_max_y[num_of_objects]);
+            num_of_objects++;
+        }
+    }
+
+    mutex_unlock(MUTEX_DISPLAY);
+}
+
+/* handle_classification_image */
+void handle_classification_image(cv::Mat &webcam_mat) {
+    int obj_ind, x_min, x_max;
+    char name_line[100];
+    cv::Point pt1, pt2, text_pos;
+    int thickness = 1;
+    int text_thickness = 1;
+    float text_scale = 1;
+    int line_type = 8;
+    int shift = 0;
+    int base_line = 0;
+    cv::Size textSize;
+    CvScalar text_color = {0, 0, 0};
+
+    mutex_lock(MUTEX_DISPLAY);
+
+    for (obj_ind = 0; obj_ind < num_of_objects; obj_ind++) {
+        /* Add the name and the confidence */
+        sprintf(name_line, "%s (%2.3f)", object_names[obj_ind],
+                object_confidence[obj_ind]);
+
+        /* If the frame is flipped, we need to adjust the X coordinates */
+        if (flipped) {
+            x_max = webcam_mat.cols - object_min_x[obj_ind];
+            x_min = webcam_mat.cols - object_max_x[obj_ind];
+        } else {
+            x_min = object_min_x[obj_ind];
+            x_max = object_max_x[obj_ind];
+        }
+
+        /* If face too high, put the text below the box, else put it above */
+        if (object_min_y[obj_ind] <= 50) {
+            if (object_max_y[obj_ind] > webcam_mat.rows - 50) {
+                text_pos = cv::Point(
+                    x_min,
+                    object_max_y[obj_ind] -
+                        10);  // Frame too big. Put the text inside the box
+            } else {
+                text_pos =
+                    cv::Point(x_min, object_max_y[obj_ind] + 20);  // was 10
+            }
+        } else {
+            text_pos = cv::Point(x_min, object_min_y[obj_ind] - 10);  // was 5
+        }
+
+        textSize = cv::getTextSize(name_line, cv::FONT_HERSHEY_PLAIN,
+                                   text_scale, text_thickness, &base_line);
+        textSize.height += 5;
+        pt1 = text_pos + cv::Point(0, -textSize.height);
+        pt2 = text_pos + cv::Point(textSize.width, base_line);
+        cv::rectangle(webcam_mat, pt1, pt2,
+                      class_colors[object_label[obj_ind] % MAX_COLORS],
+                      CV_FILLED, line_type, shift);
+
+        cv::putText(webcam_mat, name_line, text_pos,
+                    cv::FONT_HERSHEY_PLAIN,  // Font
+                    text_scale,       // Scale. 2.0 = 2x bigger... was 0.5
+                    text_color,       // obj_class_colors[obj_ind], // Color
+                    text_thickness);  // Thickness
+
+        /* Put the frame around the objects */
+        pt1 = cv::Point(x_min, object_min_y[obj_ind]);
+        pt2 = cv::Point(x_max, object_max_y[obj_ind]);
+        cv::rectangle(webcam_mat, pt1, pt2,
+                      class_colors[object_label[obj_ind] % MAX_COLORS],
+                      thickness, line_type, shift);
+    }
+
+    mutex_unlock(MUTEX_DISPLAY);
+}
+
+/* WebCamCallback */
+void WebCamCallback(std::shared_ptr<CImageStream>,
+                    std::shared_ptr<const InuDev::CImageFrame> iFrame,
+                    CInuError) {
+    cv::Mat img;
+
+    // printf("Webcam: H:%d W:%d Size:%d format:%d\n", iFrame->Height(),
+    // iFrame->Width(), iFrame->BufferSize(), iFrame->Format()); printf("-------
+    // Webcamcallback. frame_id:%d\n", iFrame->FrameIndex);
+
+    image_width = iFrame->Width();
+    image_height = iFrame->Height();
+
+    switch (iFrame->Format()) {
+        case CImageFrame::eRGB:
+            img = cv::Mat(image_height, image_width, CV_8UC3,
+                          (uchar *)iFrame->GetData());
+            cv::cvtColor(img, img, CV_RGB2BGR);
+            break;
+        case CImageFrame::eBGR:
+            img = cv::Mat(image_height, image_width, CV_8UC3,
+                          (uchar *)iFrame->GetData());
+            break;
+        case CImageFrame::eBGRA:
+            img = cv::Mat(image_height, image_width, CV_8UC4,
+                          (uchar *)iFrame->GetData());
+            cv::cvtColor(img, img, CV_BGRA2BGR);
+            break;
+        case CImageFrame::eRGBA:
+            img = cv::Mat(image_height, image_width, CV_8UC4,
+                          (uchar *)iFrame->GetData());
+            cv::cvtColor(img, img, CV_RGBA2RGB);
+            break;
+        case CImageFrame::eEmpty:
+            return;  // Do nothing
+        default:
+            printf("Got unrecognised format: %d\n", iFrame->Format());
+            return;
+    }
+
+    handle_classification_image(img);
+
+    if (Gl_fps_display) {
+        cdnn_display_fps(img, fps_line);
+    }
+
+    cv::namedWindow("Inuitive Ltd.", cv::WINDOW_NORMAL);
+    cv::imshow("Inuitive Ltd.", img);
+    cv::waitKey(1);
+}
+
+/* WebCamCallback1 */
+void WebCamCallback1(std::shared_ptr<CImageStream>,
+                     std::shared_ptr<const InuDev::CImageFrame> iFrame,
+                     CInuError) {
+    cv::Mat img1;
+
+    // printf("Web1: H:%d W:%d Size:%d\n", iFrame->Height(), iFrame->Width(),
+    // iFrame->BufferSize()); printf("------- Web1. frame_id:%d\n",
+    // iFrame->FrameIndex);
+
+    img1 = cv::Mat(iFrame->Height(), iFrame->Width(), CV_8UC3,
+                   (uchar *)iFrame->GetData());
+
+    cv::cvtColor(img1, img1, CV_BGR2RGB);
+
+    cv::namedWindow("web1", cv::WINDOW_NORMAL);
+    cv::imshow("web1", img1);
+    cv::waitKey(1);
+}
+
+/* CnnCallback */
+void CnnCallback(std::shared_ptr<CCnnStream>,
+                 std::shared_ptr<const InuDev::CCnnFrame> iFrame,
+                 CInuError err) {
+    unsigned char *blob;
+    CCnnFrame::CCnnFrameHdr header;
+
+    if (err == eOK) {
+        blob = (unsigned char *)iFrame->GetData();
+        header = iFrame->FrameHeader;
+        // printf("Got cnn blob:%p  TotalResultSize:%d NumOfTails:%d
+        // NetworkId:%d FrameId:%d\n", 		blob, header.TotalResultSize,
+        // header.NumOfTails,
+        // header.NetworkId, header.FrameId);
+
+        add_cdnn_timestamp();
+        cdnn_compute_fps();
+
+        ssd_parser(&header, (unsigned char *)blob);
+    } else {
+        if (int(err) != eTimeoutError) {
+            printf("CnnCallback Error: %d - %s\n", int(err),
+                   string(err).c_str());
+        }
+    }
+}
+
+/* load_labels */
+bool load_labels(int net_id, string classes_file) {
+    FILE *fd;
+    bool status = true;
+    char line[MAX_LABEL_LENGTH], *line_p;
+
+    fd = fopen(classes_file.c_str(), "r");
+    if (fd) {
+        printf("Reading class information from %s\n", classes_file.c_str());
+        line_p = fgets(line, sizeof(line), fd);
+        number_of_classes[net_id] = 0;
+        while (line_p) {
+            if (line[0] != '#') {
+                if (number_of_classes[net_id] >= CLASSIFICATION_MAX_CLASSES) {
+                    printf(
+                        "classification_load_classes: too many classes in %s\n",
+                        classes_file.c_str());
+                    fclose(fd);
+                    return true;
+                }
+
+                line[strlen(line) - 1] = '\0';  // Remove the CR
+
+                strcpy(classes[net_id][number_of_classes[net_id]], line);
+                // printf("Class %d: %s len:%d\n", number_of_classes[net_id],
+                // classes[net_id][number_of_classes[net_id]],
+                // (int)strlen(line));
+                number_of_classes[net_id]++;
+            }
+            line_p = fgets(line, sizeof(line), fd);
+        }
+        fclose(fd);
+        printf("Loaded %d class names\n", number_of_classes[net_id]);
+    } else {
+        printf("Failed to load %s\n", classes_file.c_str());
+        status = false;
+    }
+
+    return (status);
+}
+
+/* init_cnn */
+bool init_cnn(void) {
+    CInuError err(eOK);
+    string net_id;
+    string net_file, classes_file;
+    bool rc;
+    string cnn_bins_dir;
+    char *cnn_bins_env;
+
+    cnn_bins_dir = CNN_BINS_DIR;
+    cnn_bins_env = getenv("CNN_BINS_DIR");
+    if (cnn_bins_env) {
+        cnn_bins_dir = cnn_bins_env;
+    }
+    printf("cnn_bins directory is: %s\n", cnn_bins_dir.c_str());
+
+    /* Load the networks */
+    for (int i = 0; i < QDATA_NUM; i++) {
+        CCnnLoadParams cnn_load_params;
+
+        net_id = to_string(i);
+        net_file = build_file_name(2, cnn_bins_dir.c_str(), CNN_SYN_NAME);
+        classes_file = build_file_name(
+            3, current_directorty, qdata_dir_names[i].c_str(), "labels.txt");
+        printf("Loading Net:%s  net_file:%s\n", net_id.c_str(),
+               net_file.c_str());
+
+        rc = load_labels(i, classes_file);
+        if (!rc) {
+            return false;
+        }
+
+        cnn_load_params.NetworkID = net_id;
+        cnn_load_params.NetworkFilename = net_file;
+
+        cnn_load_params.CnnNetworkEngineType = CCnnLoadParams::eSynopsys;
+        cnn_load_params.CnnChannelSwap = ChannelSwaps[i];
+
+        err = sensor->LoadCnnNetworks(cnn_load_params);
+        if (err != eOK) {
+            printf("Failed to load net: %s  file:%s\n", net_id.c_str(),
+                   net_file.c_str());
+            return false;
+        } else {
+            printf("net: %s  file:%s loaded succesfully\n", net_id.c_str(),
+                   net_file.c_str());
+        }
+    }
+
+    cnnStream = sensor->CreateCnnStream("Sout_cnn_0");
+
+    err = cnnStream->Init();
+    if (err != eOK) {
+        cout << "CNN error: " << string(err) << endl;
+        return false;
+    }
+
+    err = cnnStream->Start();
+    if (err != eOK) {
+        cout << "CNN error: " << string(err) << endl;
+        return false;
+    }
+
+    /* Start one network */
+    active_net_id = 0;
+    cdnn_start_net(cnnStream, active_net_id, CNN_NODE_TO_START);
+
+    err = cnnStream->Register(CnnCallback);
+    if (err != eOK) {
+        cout << "CNN error: " << string(err) << endl;
+        return false;
+    }
+
+    return true;
+}
+
+#ifdef _MSC_VER
+/* is_file_exist */
+int is_file_exist(char *file_name) {
+    WIN32_FIND_DATA FindFileData;
+    HANDLE handle = FindFirstFile(file_name, &FindFileData);
+    int found = handle != INVALID_HANDLE_VALUE;
+    if (found) {
+        FindClose(handle);
+    }
+    return found;
+}
+#else
+/* is_file_exist */
+int is_file_exist(char *file_name) {
+    struct stat buffer;
+    return (stat(file_name, &buffer) == 0);
+}
+#endif
+
+/* init_example */
+bool init_example(void) {
+    CInuError err(eInitError);
+    ECameraName iCameraName = eWebCam;
+    CDeviceParamsExt prm;
+    CHwInformation channels;
+    std::map<CEntityVersion::EEntitiesID, CEntityVersion> oVersion;
+    bool rc;
+    int init_tries = 0;
+
+    mutex_create(MUTEX_DISPLAY);
+
+    sensor = CInuSensorExt::Create();
+    prm.SensorRes = eBinning;
+    prm.FPS = frames_per_sec;
+
+#ifndef USE_DEFAULT_SW_XML
+    prm.GraphXmlPath =
+        build_file_name(2, current_directorty, "sw_graph_example.xml");
+#endif
+
+#ifdef _MSC_VER
+    if (is_file_exist((char *)"C:\\temp\\Rev001")) {
+        printf("Populating mCalibrationDirName\n");
+        // prm.mCalibrationDirName = "C:\\temp";
+    }
+#else
+    if (is_file_exist((char *)"calibration//Rev001")) {
+        printf("Populating mCalibrationDirName\n");
+        prm.mCalibrationDirName = "calibration//";
+    }
+#endif
+    std::cout << "frame per second: " << frames_per_sec << ::endl;
+
+    while (err != eOK && init_tries < 10) {
+        err = sensor->Init(channels, prm);
+        if (err != eOK) {
+            std::cout << "InuSensor failed to Init. Retry..." << string(err)
+                      << std::endl;
+            AI_Sleep(2000);
+            init_tries++;
+        }
+    }
+    if (err != eOK) {
+        return false;
+    }
+
+    std::cout << "InuSensor Init OK" << std::endl;
+
+    /* Determine module version */
+    err = sensor->GetVersion(oVersion);
+    if (err != eOK) {
+        std::cout << "sensor->GetVersion failed  " << string(err) << std::endl;
+        return false;
+    }
+
+    std::cout << "Module version:  "
+              << oVersion[CEntityVersion::EEntitiesID::eHWVersion].VersionName
+              << std::endl;
+
+    if (oVersion[CEntityVersion::EEntitiesID::eHWVersion].VersionName == "B0")
+        module_type = MODULE_B0;
+    else
+        module_type = MODULE_C0;
+
+    CChannelDimensions cs;
+    int image_height, image_width;
+
+    image_height = 300;
+    image_width = 304;
+
+    cs.BufferHeight = image_height;
+    cs.BufferWidth = image_width;
+    cs.FrameStartX = 0;
+    cs.FrameWidth = image_width;
+    cs.FrameStartY = 0;
+    cs.FrameHeight = image_height;
+
+    err = sensor->SetChannelDimensions(4, cs);
+    if (err != eOK) {
+        std::cout << "SetChannelDimensions failed to SetChannelDimensions: "
+                  << string(err) << std::endl;
+    }
+
+    err = sensor->Start();
+    if (err != eOK) {
+        std::cout << "InuSensor failed to Start" << std::endl;
+        return false;
+    }
+    std::cout << "Sensor Started" << std::endl;
+
+    /* Create webcam stream */
+    if (module_type == MODULE_B0) {
+        webcamStream = sensor->CreateImageStream(7);
+    } else {
+        webcamStream = sensor->CreateImageStream(9);
+    }
+
+    err = webcamStream->Init();
+    if (err != eOK) {
+        std::cout << "Webcam stream failed to Init" << std::endl;
+        return false;
+    }
+
+    err = webcamStream->Start();
+    if (err != eOK) {
+        std::cout << "Webcam stream failed to Start" << std::endl;
+        return false;
+    }
+    std::cout << "WebCam Started" << std::endl;
+
+    /* Create resized stream */
+    resizeStream = sensor->CreateImageStream(4);
+
+    err = resizeStream->Init();
+    if (err != eOK) {
+        std::cout << "resize stream failed to Init" << std::endl;
+        return false;
+    }
+
+    err = resizeStream->Start();
+    if (err != eOK) {
+        std::cout << "resize stream failed to Start" << std::endl;
+        return false;
+    }
+    std::cout << "resize Started" << std::endl;
+
+    webcamStream->Register(WebCamCallback);
+
+    rc = init_cnn();
+    if (!rc) {
+        return false;
+    }
+
+    return (true);
+}
+
+/* handle_menu */
+void handle_menu(void) {
+    int selection;
+
+    printf("\n");
+    printf("99: Exit\n");
+    printf("Choose option: ");
+    scanf("%d", &selection);
+    switch (selection) {
+        case 99:
+            cdnn_stop_net(cnnStream, active_net_id);
+            sensor->ReleaseCnnNetworks();
+            exit(0);
+            break;
+
+        case 111:
+            Gl_fps_display = !Gl_fps_display;
+            break;
+
+        case 222:
+            debug_dump(sensor);
+            break;
+
+        default:
+            printf("Illegal selection\n");
+            break;
+    }
+}
+
+/* main */
+int main(int argc, char *argv[]) {
+    CInuError err(eOK);
+
+    printf("OpenCV version : %s\n", CV_VERSION);
+
+    printf("FPS set to: %d\n", frames_per_sec);
+#ifdef _MSC_VER
+    GetCurrentDirectory(sizeof(current_directorty), current_directorty);
+#else
+    getcwd(current_directorty, sizeof(current_directorty));
+#endif
+    printf("Current directory:%s\n", current_directorty);
+
+    if (!init_example()) {
+        exit(-1);
+    }
+
+    while (1) {
+        handle_menu();
+    }
+
+    err = sensor->Terminate();
+    if (err != eOK) {
+        std::cout << "error: " << (std::string)err << std::endl;
+    }
+
+    return 0;
+}
