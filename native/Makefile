@@ -6,12 +6,12 @@ CXX=g++
 SRC=$(shell find ./ -maxdepth 1 -name "*.cc")
 OBJ := $(patsubst %.cc,%.o,${SRC})
 
-TFLITE_SRC=$(shell find ./tflite -name "*.cc" -or -name "*.c")
-TFLITE_OBJ := $(patsubst %.c,%.o,$(filter %.c, $(TFLITE_SRC)))
-TFLITE_OBJ += $(patsubst %.cc,%.o,$(filter %.cc, $(TFLITE_SRC)))
+NN_SRC=$(shell find ./tflite -name "*.cc")
+NN_OBJ += $(patsubst %.cc,%.o,${NN_SRC})
+
+$(info ${NN_OBJ})
 
 CPPFLAGS = -Iinu/include -I/usr/include/opencv4
-CPPFLAGS += -I. -Itflite -Itflite/third_party/flatbuffers/include -Itflite/third_party/ruy -Itflite/third_party/gemmlowp
 
 CXXFLAGS += -O2 -std=c++11 -fno-rtti -fomit-frame-pointer -Wall
 LDFLAGS = -Linu/lib
@@ -19,12 +19,26 @@ LDLIBS += -lCommonUtilities -lInuStreams \
 	-lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_plot -lopencv_text \
 	-lstdc++
 
+TENSORFLOW_ROOT_DIR=./tflite
+TENSORFLOW_CPPFLAGS=\
+	-I${TENSORFLOW_ROOT_DIR}/tensorflow/lite/tools/make/downloads/flatbuffers/include \
+	-I${TENSORFLOW_ROOT_DIR}/tensorflow/lite/tools/make/downloads/absl \
+	-I${TENSORFLOW_ROOT_DIR}
+
+tflite/%.o:tflite/%.cc
+	${CXX} -c $^ -o $@ ${TENSORFLOW_CPPFLAGS}
+
+tflite/libnn.a: ${NN_OBJ}
+	ar rcs $@ $^
+
 demo.elf:${OBJ}
 	${CC} ${LDFLAGS} $^ -o $@ ${LDLIBS}
 
 clean:
 	-rm -rf ${OBJ}
 	-rm demo.elf
+	-rm tflite/libnn.a
+	-rm ${NN_OBJ}
 
 run: demo.elf
 	LD_LIBRARY_PATH=inu/lib ./demo.elf

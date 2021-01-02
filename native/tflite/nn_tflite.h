@@ -1,21 +1,19 @@
 #ifndef NN_TFLITE_H
 #define NN_TFLITE_H
+#include <unistd.h>
 
-#include "cnn_model.h"
-#include "config.h"
-#include "nn.h"
-#include "tensorflow/lite/micro/all_ops_resolver.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
-#include "tensorflow/lite/micro/micro_interpreter.h"
-#include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
-#include "tensorflow/lite/schema/schema_generated.h"
-#include "tensorflow/lite/version.h"
+#include <cstdio>
 
-class NNTFLite : public NN {
+#include "tensorflow/lite/interpreter.h"
+#include "tensorflow/lite/kernels/register.h"
+#include "tensorflow/lite/model.h"
+#include "tensorflow/lite/optional_debug_tools.h"
+
+#define kFeatureElementCount 400
+
+class NNTFLite {
    private:
-    tflite::MicroInterpreter* interpreter_;
-    tflite::AllOpsResolver micro_op_resolver_;
-    tflite::MicroErrorReporter error_reporter_;
+    tflite::Interpreter* interpreter_;
 
     float* feature_buffer_;
     float* output_buffer_;

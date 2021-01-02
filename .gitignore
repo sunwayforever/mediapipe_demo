@@ -1,2 +1,3 @@
 *.o
 /native/*.elf
+/native/tflite/libnn.a
