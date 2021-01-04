@@ -31,7 +31,7 @@ tflite/%.o:tflite/%.cc
 tflite/libnn.a: ${NN_OBJ}
 	ar rcs $@ $^
 
-demo.elf:${OBJ}
+test.elf:${OBJ}
 	${CC} ${LDFLAGS} $^ -o $@ ${LDLIBS}
 
 clean:
@@ -40,5 +40,5 @@ clean:
 	-rm tflite/libnn.a
 	-rm ${NN_OBJ}
 
-run: demo.elf
-	LD_LIBRARY_PATH=inu/lib ./demo.elf
+run: test.elf
+	LD_LIBRARY_PATH=inu/lib test.elf
