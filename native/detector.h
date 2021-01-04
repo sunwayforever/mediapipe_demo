@@ -1,6 +1,7 @@
 // 2021-01-04 14:01
 #ifndef DETECTOR_H
 #define DETECTOR_H
+#include "Eigen/Eigen"
 #include "common.h"
 #include "tflite/nn_tflite.h"
 

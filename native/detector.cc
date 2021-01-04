@@ -5,6 +5,10 @@ Detector::Detector()
       nn_output(new float[kOutputSize]),
       nn(nn_input, nn_output) {}
 
+Eigen::ArrayXf sigmoid(Eigen::ArrayXf input) {
+    return 1.0 / (1.0 + 1.0 / input.exp());
+}
+
 void Detector::Detect(cv::Mat img) {
     // convert to rgb
     cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
@@ -15,6 +19,11 @@ void Detector::Detect(cv::Mat img) {
     int total_size = img.cols * img.rows * img.elemSize();
     memcpy(this->nn_input, img.data, total_size);
     this->nn.Invoke();
-    // float *regressors = this->nn_output;
-    // float *classificators = this->nn_output + kNumBoxes * kNumCoords;
+    float *regressors = this->nn_output;
+    Eigen::Map<Eigen::ArrayXf> scores(this->nn_output + kNumBoxes * kNumCoords,
+                                      kNumBoxes);
+
+    scores = sigmoid(scores);
+    int argmax = 0;
+    float max_score = scores.maxCoeff(&argmax);
 }
