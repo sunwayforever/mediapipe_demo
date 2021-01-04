@@ -8,15 +8,17 @@
 #include "tensorflow/lite/kernels/register.h"
 #include "tensorflow/lite/model.h"
 #include "tensorflow/lite/optional_debug_tools.h"
-
-#define kFeatureElementCount 400
+using namespace tflite;
 
 class NNTFLite {
    private:
-    tflite::Interpreter* interpreter_;
+    std::unique_ptr<Interpreter> interpreter;
+    std::unique_ptr<FlatBufferModel> model;
+    ops::builtin::BuiltinOpResolver resolver;
+    InterpreterBuilder builder;
 
-    float* feature_buffer_;
-    float* output_buffer_;
+    float* feature_buffer;
+    float* output_buffer;
 
    public:
     NNTFLite(float* feature_buffer, float* output_buffer);

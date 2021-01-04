@@ -1,6 +1,6 @@
 // 2021-01-04 12:43
-#ifndef VIDEO_CAPTURE_HH
-#define VIDEO_CAPTURE_HH
+#ifndef VIDEO_CAPTURE_H
+#define VIDEO_CAPTURE_H
 
 #include "common.h"
 
@@ -18,4 +18,4 @@ class VideoCapture {
     cv::Mat read();
 };
 
-#endif  // VIDEO_CAPTURE_HH
+#endif  // VIDEO_CAPTURE_H
