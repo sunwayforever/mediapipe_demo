@@ -88,9 +88,9 @@ std::vector<Box> Detector::Calibrate(float *raw_boxes, float *scores) {
         Box box{score, x_center - w / 2.0, y_center - h / 2.0, w, h};
         for (int i = 0; i < kNumKeyPoints; i++) {
             box.keypoints[i][0] =
-                raw_box[4 + i * 2] / kImageWidth * +anchor.x_center;
+                raw_box[4 + i * 2] / kImageWidth + anchor.x_center;
             box.keypoints[i][1] =
-                raw_box[4 + i * 2 + 1] / kImageHeight * +anchor.y_center;
+                raw_box[4 + i * 2 + 1] / kImageHeight + anchor.y_center;
         }
         ret.push_back(box);
     }
