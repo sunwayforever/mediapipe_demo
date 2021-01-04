@@ -2,6 +2,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define kMinScoreThresh 0.68
 #define kNumBoxes 896
 #define kNumCoords 16
 #define kNumKeyPoints 6

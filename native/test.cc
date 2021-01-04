@@ -8,7 +8,11 @@ int main(int argc, char *argv[]) {
     cv::namedWindow("test", cv::WINDOW_NORMAL);
     while (true) {
         cv::Mat img = capture.read();
-        detector.Detect(img);
+        std::vector<Box> boxes = detector.Detect(img);
+        for (auto box : boxes) {
+            printf("%f\n", box.score);
+        }
+
         cv::imshow("test", img);
         cv::waitKey(1);
     }
