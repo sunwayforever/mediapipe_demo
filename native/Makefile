@@ -1,4 +1,4 @@
-all:test.elf
+all:face_detector.elf
 
 CC=gcc
 CXX=g++
@@ -31,7 +31,7 @@ TENSORFLOW_CPPFLAGS=\
 tflite/%.o:tflite/%.cc
 	${CXX} -c $< -o $@ ${TENSORFLOW_CPPFLAGS}
 
-test.elf:${OBJ} ${NN_OBJ} tflite/libtensorflow-lite.a
+face_detector.elf:${OBJ} ${NN_OBJ} tflite/libtensorflow-lite.a
 	${CC} ${LDFLAGS} $^ -o $@ ${LDLIBS}
 
 clean:
@@ -41,5 +41,5 @@ clean:
 	-rm ${NN_OBJ}
 	-rm $(NN_OBJ:.o=.d)
 
-run: test.elf
-	LD_LIBRARY_PATH=inu/lib test.elf
+run: face_detector.elf
+	LD_LIBRARY_PATH=inu/lib face_detector.elf
