@@ -107,6 +107,7 @@ cv::Mat VideoCapture::read() {
             printf("Got unrecognised format: %d\n", this->frame->Format());
             break;
     }
+    cv::flip(img, img, 2);
     return img;
 }
 VideoCapture::~VideoCapture() { this->sensor->Terminate(); }

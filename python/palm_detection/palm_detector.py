@@ -152,7 +152,7 @@ def gen_anchors():
 
 class Detector(object):
     def __init__(self):
-        model_path = "../model/palm_detection.tflite"
+        model_path = "../../model/palm_detection.tflite"
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()

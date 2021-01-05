@@ -23,7 +23,7 @@ MIN_PROB_THRESH = 0.5
 
 class Mesh(object):
     def __init__(self):
-        model_path = "../model/face_landmark.tflite"
+        model_path = "../../model/face_landmark.tflite"
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()

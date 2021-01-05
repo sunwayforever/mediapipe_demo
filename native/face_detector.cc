@@ -12,6 +12,7 @@ void AnnotateImage(cv::Mat img, std::vector<Box> boxes) {
         cv::rectangle(img, cv::Point(x1, y1), cv::Point(x2, y2),
                       cv::Scalar(0, 255, 0), 2);
         std::ostringstream os;
+        os.precision(2);
         os << box.score;
         cv::putText(img, os.str(), cv::Point(x1, y1 - 6), 0, 1,
                     cv::Scalar(0, 255, 0));
