@@ -30,7 +30,7 @@ TENSORFLOW_CPPFLAGS=\
 tflite/%.o:tflite/%.cc
 	${CXX} -c $< -o $@ ${TENSORFLOW_CPPFLAGS}
 
-face_detector.elf:${OBJ} ${NN_OBJ} tflite/libtensorflow-lite.a
+${BIN}:${OBJ} ${NN_OBJ} tflite/libtensorflow-lite.a
 	${CC} ${LDFLAGS} $^ -o $@ ${LDLIBS}
 
 clean:

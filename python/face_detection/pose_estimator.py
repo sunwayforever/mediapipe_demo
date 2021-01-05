@@ -40,19 +40,20 @@ class PoseEstimator:
         self.dist_coeffs = np.zeros((4, 1))
         self.rotation_stablizers = [Stablizer(2, 1) for _ in range(3)]
         self.translation_stablizers = [Stablizer(2, 1) for _ in range(3)]
-        self.r_vec = None
-        self.t_vec = None
+
+        self.r_vec = np.array([[-2.3702784], [-0.74427134], [-0.5183508]])
+        self.t_vec = np.array([[173.36334], [-17.135548], [904.95544]])
 
     def solve(self, image_points):
-        if self.r_vec is None:
-            _, rotation_vector, translation_vector = cv2.solvePnP(
-                self.model_points,
-                image_points,
-                self.camera_matrix,
-                self.dist_coeffs,
-            )
-            self.r_vec = rotation_vector
-            self.t_vec = translation_vector
+        # if self.r_vec is None:
+        #     _, rotation_vector, translation_vector = cv2.solvePnP(
+        #         self.model_points,
+        #         image_points,
+        #         self.camera_matrix,
+        #         self.dist_coeffs,
+        #     )
+        #     self.r_vec = rotation_vector
+        #     self.t_vec = translation_vector
 
         _, rotation_vector, translation_vector = cv2.solvePnP(
             self.model_points,
@@ -80,6 +81,8 @@ class PoseEstimator:
                 )
             ]
         )
+        # print(rotation_vector)
+        # print(translation_vector)
         return (rotation_vector, translation_vector)
 
     def draw_stick(

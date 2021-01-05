@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import time
 import sys
 import os
+from pose_estimator import PoseEstimator
 
 sys.path.append(os.path.abspath("../util"))
 sys.path.append(os.path.abspath("../face_detection"))
@@ -358,6 +359,67 @@ face_landmark_connections = [
     10,
 ]
 
+pose_landmarks = [
+    # Left eye.
+    33,
+    7,
+    163,
+    # Left eyebrow.
+    46,
+    53,
+    52,
+    # Right eye.
+    263,
+    249,
+    390,
+    # Right eyebrow.
+    276,
+    283,
+    282,
+    # Face oval.
+    10,
+    338,
+    297,
+    332,
+    284,
+    251,
+    389,
+    356,
+    454,
+    323,
+    361,
+    288,
+    397,
+    365,
+    379,
+    378,
+    400,
+    377,
+    152,
+    148,
+    176,
+    149,
+    150,
+    136,
+    172,
+    58,
+    132,
+    93,
+    234,
+    127,
+    162,
+    21,
+    54,
+    103,
+    67,
+    109,
+    10,
+    # nose
+    1,
+    4,
+    5,
+]
+
 
 def annotate_image(img, surface):
     if surface is None:
@@ -395,14 +457,18 @@ def mesh_image(img):
 def mesh_stream():
     mesh = Mesh()
     vid = cv2.VideoCapture(0)
+    _, img = vid.read()
+    pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
     while True:
         succ, img = vid.read()
         if not succ:
             continue
         img = cv2.flip(img, 2)
         surface = mesh(img)
-        annotate_image(img, surface)
-        util.show_benchmark(img)
+        if surface is not None:
+            annotate_image(img, surface)
+            pose_estimator.estimate(img, surface[:, :2], surface[1])
+            util.show_benchmark(img)
         cv2.imshow("", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
