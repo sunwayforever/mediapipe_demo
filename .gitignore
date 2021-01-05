@@ -3,3 +3,4 @@
 /native/tflite/libnn.a
 /native/.clangd/
 *.d
+.ccls-cache

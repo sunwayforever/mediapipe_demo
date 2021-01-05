@@ -13,12 +13,10 @@ class PoseEstimator:
         # 3D model points.
         self.model_points = np.load("model_points.npy")
 
-        self.focal_length = self.size[1]
-        self.camera_center = (self.size[1] / 2, self.size[0] / 2)
         self.camera_matrix = np.array(
             [
-                [self.focal_length, 0, self.camera_center[0]],
-                [0, self.focal_length, self.camera_center[1]],
+                [1010, 0, 628],
+                [0, 1014, 339],
                 [0, 0, 1],
             ],
             dtype="double",
@@ -38,7 +36,13 @@ class PoseEstimator:
         return (rotation_vector, translation_vector)
 
     def get3dof(self, rvec, tvec):
-        return (rvec * 180 / np.pi).reshape(-1).astype(np.int)
+        R, _ = cv2.Rodrigues(rvec)
+        pitch = math.atan2(R[1, 0], R[0, 0])
+        yaw = math.atan2(
+            -R[2, 0], math.sqrt(math.pow(R[2, 1], 2) + math.pow(R[2, 2], 2))
+        )
+        roll = math.atan2(R[2, 1], R[2, 2])
+        return int(yaw * 57), int(pitch * 57), int(roll * 57)
 
     def draw_stick(
         self,
