@@ -11,7 +11,7 @@ from collections import defaultdict
 def resize(img, roi_width, roi_height):
     # height/width
     orig_aspect_ratio = img.shape[0] / img.shape[1]
-    roi_aspect_ratio = roi_width / roi_height
+    roi_aspect_ratio = roi_height / roi_width
     h_padding, v_padding = 0, 0
 
     if orig_aspect_ratio < roi_aspect_ratio:

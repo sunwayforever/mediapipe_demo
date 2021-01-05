@@ -4,6 +4,7 @@
 #include "Eigen/Eigen"
 #include "common.h"
 #include "tflite/nn_tflite.h"
+#include "util.h"
 
 struct Box {
     float score;

@@ -52,7 +52,10 @@ vector<Box> Detector::Detect(cv::Mat input_img) {
     // convert to rgb
     cv::cvtColor(input_img, img, cv::COLOR_BGR2RGB);
     // resize
-    cv::resize(img, img, cv::Size(kImageWidth, kImageHeight));
+    PaddingImage padding_img = resize(img, kImageWidth, kImageHeight);
+    img = padding_img.img;
+    float h_padding = padding_img.h_padding;
+    float v_padding = padding_img.v_padding;
     // convert 8UC3 to float32 (-1,1)
     img.convertTo(img, CV_32F, 1.0 / 127.5, -1);
     int total_size = img.cols * img.rows * img.elemSize();
@@ -64,7 +67,33 @@ vector<Box> Detector::Detect(cv::Mat input_img) {
 
     scores = sigmoid(scores);
 
-    return NMS(Calibrate(raw_boxes, scores.data()));
+    auto restore_x = [h_padding](float x) -> float {
+        return (x - h_padding) * kImageWidth /
+               ((1 - 2 * h_padding) * kImageWidth);
+    };
+    auto restore_y = [v_padding](float y) -> float {
+        return (y - v_padding) * kImageHeight /
+               ((1 - 2 * v_padding) * kImageHeight);
+    };
+    auto restore_width = [h_padding](float w) -> float {
+        return w * kImageWidth / ((1 - 2 * h_padding) * kImageWidth);
+    };
+    auto restore_height = [v_padding](float h) -> float {
+        return h * kImageHeight / ((1 - 2 * v_padding) * kImageHeight);
+    };
+
+    std::vector<Box> boxes = NMS(Calibrate(raw_boxes, scores.data()));
+    for (auto &box : boxes) {
+        box.x_min = restore_x(box.x_min);
+        box.y_min = restore_y(box.y_min);
+        box.w = restore_width(box.w);
+        box.h = restore_height(box.h);
+        for (auto &point : box.keypoints) {
+            point[0] = restore_x(point[0]);
+            point[1] = restore_y(point[1]);
+        }
+    }
+    return boxes;
 }
 
 std::vector<Box> Detector::Calibrate(float *raw_boxes, float *scores) {
