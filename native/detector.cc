@@ -114,7 +114,7 @@ std::vector<Box> Detector::Calibrate(float *raw_boxes, float *scores) {
         w = w / kImageWidth * anchor.w;
         h = h / kImageHeight * anchor.h;
 
-        Box box{score, x_center - w / 2.0, y_center - h / 2.0, w, h};
+        Box box{score, x_center - w / 2, y_center - h / 2, w, h};
         for (int i = 0; i < kNumKeyPoints; i++) {
             box.keypoints[i][0] =
                 raw_box[4 + i * 2] / kImageWidth + anchor.x_center;
@@ -132,16 +132,16 @@ vector<Box> Detector::NMS(vector<Box> boxes) {
         boxes.begin(), boxes.end(),
         [](const Box &a, const Box &b) -> bool { return a.score > b.score; });
 
-    vector<bool> supressed(boxes.size(), false);
-    for (int i = 0; i < boxes.size(); i++) {
+    bool supressed[boxes.size()] = {};
+    for (size_t i = 0; i < boxes.size(); i++) {
         if (supressed[i]) {
             continue;
         }
         Box &best = boxes[i];
         picked.push_back(best);
-        for (int j = i + 1; j < boxes.size(); j++) {
+        for (size_t j = i + 1; j < boxes.size(); j++) {
             float iou = IOU(best, boxes[j]);
-            if (iou >= 0.5) {
+            if (iou >= kNMSThresh) {
                 supressed[j] = true;
             }
         }

@@ -34,6 +34,9 @@ int main(int argc, char *argv[]) {
         std::vector<Box> boxes = detector.Detect(img);
         AnnotateImage(img, boxes);
         cv::imshow("test", img);
-        cv::waitKey(1);
+        if ((cv::waitKey(1) & 0xff) == 0x71) {
+            break;
+        }
     }
+    cv::destroyWindow("test");
 }

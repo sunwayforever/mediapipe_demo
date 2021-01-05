@@ -18,6 +18,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <queue>
 #include <string>
+#include <chrono>
+
 #include "config.h"
 
 #include "InuSensorExt.h"
@@ -25,5 +27,6 @@
 
 using namespace std;
 using namespace InuDev;
+using namespace std::chrono;
 
 #endif

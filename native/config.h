@@ -3,6 +3,7 @@
 #define CONFIG_H
 
 #define kMinScoreThresh 0.68
+#define kNMSThresh 0.5
 #define kNumBoxes 896
 #define kNumCoords 16
 #define kNumKeyPoints 6
