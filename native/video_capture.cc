@@ -96,7 +96,9 @@ cv::Mat VideoCapture::read() {
         case CImageFrame::eBGRA:
             img = cv::Mat(image_height, image_width, CV_8UC4,
                           (uchar *)this->frame->GetData());
-            cv::cvtColor(img, img, cv::COLOR_BGRA2BGR);
+            // TODO: inu bug? the frame format seems like RGBA instead of
+            // reported BGRA
+            cv::cvtColor(img, img, cv::COLOR_RGBA2BGR);
             break;
         case CImageFrame::eRGBA:
             img = cv::Mat(image_height, image_width, CV_8UC4,
