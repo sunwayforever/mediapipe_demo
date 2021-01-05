@@ -52,10 +52,11 @@ vector<Box> Detector::Detect(cv::Mat input_img) {
     // convert to rgb
     cv::cvtColor(input_img, img, cv::COLOR_BGR2RGB);
     // resize
-    PaddingImage padding_img = resize(img, kImageWidth, kImageHeight);
-    img = padding_img.img;
-    float h_padding = padding_img.h_padding;
-    float v_padding = padding_img.v_padding;
+    ResizedImage resized_image =
+        ResizeAndKeepAspectRatio(img, kImageWidth, kImageHeight);
+    img = resized_image.img;
+    float h_padding = resized_image.h_padding;
+    float v_padding = resized_image.v_padding;
     // convert 8UC3 to float32 (-1,1)
     img.convertTo(img, CV_32F, 1.0 / 127.5, -1);
     int total_size = img.cols * img.rows * img.elemSize();

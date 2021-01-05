@@ -17,7 +17,7 @@ void AnnotateImage(cv::Mat img, std::vector<Box> boxes) {
         cv::putText(img, os.str(), cv::Point(x1, y1 - 6), 0, 1,
                     cv::Scalar(0, 255, 0));
 
-        for (auto point : box.keypoints) {
+        for (auto &point : box.keypoints) {
             cv::circle(img, cv::Point(point[0] * width, point[1] * height), 1,
                        cv::Scalar(0, 0, 255), 2);
         }

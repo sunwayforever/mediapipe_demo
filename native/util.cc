@@ -1,5 +1,6 @@
 #include "util.h"
-PaddingImage resize(cv::Mat img, int roi_width, int roi_height) {
+ResizedImage ResizeAndKeepAspectRatio(cv::Mat img, int roi_width,
+                                      int roi_height) {
     int height = img.rows;
     int width = img.cols;
     float orig_aspect_ratio = (float)height / width;
@@ -22,7 +23,7 @@ PaddingImage resize(cv::Mat img, int roi_width, int roi_height) {
     h_padding /= 2;
     cv::copyMakeBorder(img, img, v_padding, v_padding, h_padding, h_padding,
                        cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
-    return PaddingImage{
+    return ResizedImage{
         img,
         (float)v_padding / roi_width,
         (float)h_padding / roi_height,

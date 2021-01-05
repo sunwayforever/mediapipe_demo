@@ -3,12 +3,13 @@
 #define UTIL_H
 
 #include "common.h"
-struct PaddingImage {
+
+struct ResizedImage {
     cv::Mat img;
     float v_padding;
     float h_padding;
 };
 
-PaddingImage resize(cv::Mat img, int roi_width, int roi_height);
-
+ResizedImage ResizeAndKeepAspectRatio(cv::Mat img, int roi_width,
+                                      int roi_height);
 #endif  // UTIL_H

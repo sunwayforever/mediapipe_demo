@@ -1,17 +1,16 @@
-all:face_detector.elf
-
+BIN=face_detector.elf
 CC=gcc
 CXX=g++
 
-SRC=$(shell find ./ -maxdepth 1 -name "*.cc")
+all:${BIN}
+
+SRC=$(wildcard *.cc)
 OBJ := $(patsubst %.cc,%.o,${SRC})
 -include $(OBJ:.o=.d)
 
-NN_SRC=$(shell find ./tflite -name "*.cc")
+NN_SRC=$(wildcard tflite/*.cc)
 NN_OBJ += $(patsubst %.cc,%.o,${NN_SRC})
 -include $(NN_OBJ:.o=.d)
-
-$(info ${NN_OBJ})
 
 CPPFLAGS = -Iinu/include -I/usr/include/opencv4 ${TENSORFLOW_CPPFLAGS} -MMD
 
@@ -37,9 +36,9 @@ face_detector.elf:${OBJ} ${NN_OBJ} tflite/libtensorflow-lite.a
 clean:
 	-rm -rf ${OBJ}
 	-rm $(NN_OBJ:.o=.d)
-	-rm demo.elf
+	-rm ${BIN}
 	-rm ${NN_OBJ}
 	-rm $(NN_OBJ:.o=.d)
 
-run: face_detector.elf
-	LD_LIBRARY_PATH=inu/lib face_detector.elf
+run: ${BIN}
+	LD_LIBRARY_PATH=inu/lib ${BIN}
