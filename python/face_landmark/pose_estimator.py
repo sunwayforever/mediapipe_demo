@@ -82,3 +82,4 @@ class PoseEstimator:
     def estimate(self, img, surface, nose):
         pose = self.solve(surface)
         self.draw_stick(img, nose, pose[0], pose[1])
+        return pose

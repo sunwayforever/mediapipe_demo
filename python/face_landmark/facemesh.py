@@ -391,7 +391,7 @@ def mesh_image(img):
     cv2.destroyAllWindows()
 
 
-def mesh_stream():
+def do_mesh_stream(generator=False):
     mesh = Mesh()
     vid = cv2.VideoCapture(0)
     _, img = vid.read()
@@ -404,8 +404,40 @@ def mesh_stream():
         surface = mesh(img)
         if surface is not None:
             annotate_image(img, surface)
-            pose_estimator.estimate(img, surface[:, :2], surface[1])
+            pose = pose_estimator.estimate(img, surface[:, :2], surface[1])
             util.show_benchmark(img)
+            if generator:
+                yield pose
+        cv2.imshow("", img)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    vid.release()
+    cv2.destroyAllWindows()
+
+
+def mesh_stream():
+    for _ in mesh_generator():
+        pass
+
+
+def mesh_generator():
+    mesh = Mesh()
+    vid = cv2.VideoCapture(0)
+    _, img = vid.read()
+    pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
+    while True:
+        succ, img = vid.read()
+        if not succ:
+            continue
+        img = cv2.flip(img, 2)
+        surface = mesh(img)
+        if surface is not None:
+            annotate_image(img, surface)
+            pose = pose_estimator.estimate(img, surface[:, :2], surface[1])
+            util.show_benchmark(img)
+            yield pose
+
         cv2.imshow("", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
