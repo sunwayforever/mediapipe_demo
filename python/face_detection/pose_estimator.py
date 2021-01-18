@@ -3,8 +3,8 @@
 # 2020-12-17 17:41
 import numpy as np
 import cv2
-from stablizer import Stablizer
 
+from .stablizer import Stablizer
 
 class PoseEstimator:
     def __init__(self, img_size=(480, 640)):

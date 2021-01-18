@@ -5,7 +5,12 @@ import cv2
 import argparse
 import numpy as np
 import time
+import os
 from collections import defaultdict
+
+
+def get_resource(f):
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), f)
 
 
 def resize(img, roi_width, roi_height):

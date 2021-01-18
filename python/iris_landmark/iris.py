@@ -22,7 +22,7 @@ IMG_HEIGHT = 64
 
 class Iris(object):
     def __init__(self):
-        model_path = "../../model/iris_landmark.tflite"
+        model_path = util.get_resource("../model/iris_landmark.tflite")
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()

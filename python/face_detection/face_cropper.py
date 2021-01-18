@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2020-12-15 21:04
-from face_detector import Detector
 import math
 import cv2
 
+from .face_detector import Detector
 
 class FaceCropper(object):
     def __init__(self):

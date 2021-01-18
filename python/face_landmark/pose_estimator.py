@@ -4,6 +4,7 @@
 import numpy as np
 import cv2
 import math
+import util
 
 
 class PoseEstimator:
@@ -11,7 +12,7 @@ class PoseEstimator:
         self.size = img_size
 
         # 3D model points.
-        self.model_points = np.load("model_points.npy")
+        self.model_points = np.load(util.get_resource("model_points.npy"))
 
         self.camera_matrix = np.array(
             [

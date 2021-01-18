@@ -8,11 +8,10 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
-from pose_estimator import PoseEstimator
 import sys
 import os
 
-sys.path.append(os.path.abspath("../util"))
+from .pose_estimator import PoseEstimator
 import util
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128
@@ -160,7 +159,7 @@ def gen_anchors():
 
 class Detector(object):
     def __init__(self):
-        model_path = "../../model/face_detection_front.tflite"
+        model_path = util.get_resource("../model/face_detection_front.tflite")
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()

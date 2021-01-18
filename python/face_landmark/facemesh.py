@@ -10,11 +10,9 @@ import matplotlib.pyplot as plt
 import time
 import sys
 import os
-from pose_estimator import PoseEstimator
 
-sys.path.append(os.path.abspath("../util"))
-sys.path.append(os.path.abspath("../face_detection"))
-from face_cropper import FaceCropper
+from .pose_estimator import PoseEstimator
+from face_detection.face_cropper import FaceCropper
 import util
 
 IMG_WIDTH = 192
@@ -24,7 +22,7 @@ MIN_PROB_THRESH = 0.5
 
 class Mesh(object):
     def __init__(self):
-        model_path = "../../model/face_landmark.tflite"
+        model_path = util.get_resource("../model/face_landmark.tflite")
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
@@ -357,67 +355,6 @@ face_landmark_connections = [
     109,
     109,
     10,
-]
-
-pose_landmarks = [
-    # Left eye.
-    33,
-    7,
-    163,
-    # Left eyebrow.
-    46,
-    53,
-    52,
-    # Right eye.
-    263,
-    249,
-    390,
-    # Right eyebrow.
-    276,
-    283,
-    282,
-    # Face oval.
-    10,
-    338,
-    297,
-    332,
-    284,
-    251,
-    389,
-    356,
-    454,
-    323,
-    361,
-    288,
-    397,
-    365,
-    379,
-    378,
-    400,
-    377,
-    152,
-    148,
-    176,
-    149,
-    150,
-    136,
-    172,
-    58,
-    132,
-    93,
-    234,
-    127,
-    162,
-    21,
-    54,
-    103,
-    67,
-    109,
-    10,
-    # nose
-    1,
-    4,
-    5,
 ]
 
 
