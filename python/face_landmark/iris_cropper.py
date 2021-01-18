@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2020-12-15 21:04
-from facemesh import Mesh
+from .facemesh import Mesh
 
 left_eye_landmarks = [
     33,

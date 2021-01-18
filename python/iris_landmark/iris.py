@@ -11,9 +11,7 @@ import time
 import sys
 import os
 
-sys.path.append(os.path.abspath("../util"))
-sys.path.append(os.path.abspath("../face_landmark"))
-from iris_cropper import IrisCropper
+from face_landmark.iris_cropper import IrisCropper
 import util
 
 IMG_WIDTH = 64
