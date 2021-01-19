@@ -4,3 +4,6 @@
 /native/.clangd/
 *.d
 .ccls-cache
+/native/inu_stream_wrap.cxx
+/native/inu_stream.so
+/native/inu_stream.py

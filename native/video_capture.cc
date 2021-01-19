@@ -15,9 +15,7 @@ bool VideoCapture::init() {
     this->frame = shared_ptr<CImageFrame>(new CImageFrame());
     this->sensor = CInuSensorExt::Create();
     prm.SensorRes = eBinning;
-    prm.FPS = kFrameRate;
-
-    std::cout << "frame per second: " << kFrameRate << ::endl;
+    prm.FPS = 60;
 
     while (err != eOK && init_tries < 10) {
         err = this->sensor->Init(channels, prm);

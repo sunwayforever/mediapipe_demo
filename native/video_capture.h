@@ -6,7 +6,6 @@
 
 class VideoCapture {
    private:
-    const static int kFrameRate = 60;
     shared_ptr<const CImageFrame> frame;
     shared_ptr<CInuSensorExt> sensor;
     shared_ptr<CImageStream> webcam_stream;
