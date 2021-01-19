@@ -100,7 +100,7 @@ def remap(x, lo, hi, scale):
     return (x - lo) / (hi - lo + 1e-6) * scale
 
 
-face_points = [
+pose_points = [
     # left eye right corner
     173,
     # right eye left corner
@@ -114,6 +114,18 @@ face_points = [
     # chin
     199,
 ]
+
+mouth_points = [
+    # top
+    13,
+    # botton
+    14,
+    # left
+    62,
+    # right
+    292,
+]
+
 face_landmark_connections = [
     # Lips.
     61,
@@ -383,8 +395,11 @@ def annotate_image(img, surface):
     #     color = 255 - remap(z, z_min, z_max, 255)
     #     cv2.circle(img, (x, y), color=(color, color, 0), radius=1, thickness=1)
 
-    for i in face_points:
+    for i in pose_points:
         cv2.circle(img, tuple(surface[i][:2]), color=(0, 255, 0), radius=2, thickness=2)
+
+    for i in mouth_points:
+        cv2.circle(img, tuple(surface[i][:2]), color=(0, 0, 255), radius=2, thickness=2)
 
     # print(surface[face_points])
     # all.append(surface[face_points])
@@ -435,11 +450,11 @@ def mesh_generator():
         surface = mesh(img)
         if surface is not None:
             annotate_image(img, surface)
-            pose = pose_estimator.estimate(
-                img, surface[face_points, :2], surface[face_points[2]]
-            )
             util.show_benchmark(img)
-            yield pose
+            rotation_vector = pose_estimator.estimate(
+                img, surface[pose_points, :2], surface[pose_points[2]]
+            )
+            yield rotation_vector, surface[mouth_points]
 
         cv2.imshow("", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):

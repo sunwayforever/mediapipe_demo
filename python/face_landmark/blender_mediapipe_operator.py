@@ -51,7 +51,7 @@ class MediapipeOperator(bpy.types.Operator):
             self.range[name] = np.array(
                 [min(value, self.range[name][0]), max(value, self.range[name][1])]
             )
-            val_range = self.range[name][1] - self.range[name][0]
+        val_range = self.range[name][1] - self.range[name][0]
         if val_range != 0:
             return (value - self.range[name][0]) / val_range
         else:
@@ -63,7 +63,7 @@ class MediapipeOperator(bpy.types.Operator):
             return {"CANCELLED"}
 
         if event.type == "TIMER":
-            rotation_vector, _ = next(self._stream)
+            rotation_vector, mouth = next(self._stream)
             # set bone rotation/positions
             bones = bpy.data.objects["RIG-Vincent"].pose.bones
             # yaw
@@ -82,26 +82,22 @@ class MediapipeOperator(bpy.types.Operator):
             bones["head_fk"].keyframe_insert(data_path="rotation_euler", index=-1)
 
             # # mouth position
-            # bones["mouth_ctrl"].location[2] = self.smooth_value(
-            #     "m_h",
-            #     2,
-            #     -self.get_range(
-            #         "mouth_height", np.linalg.norm(shape[62] - shape[66])
-            #     )
-            #     * 0.06,
-            # )
-            # bones["mouth_ctrl"].location[0] = self.smooth_value(
-            #     "m_w",
-            #     2,
-            #     (
-            #         self.get_range(
-            #             "mouth_width", np.linalg.norm(shape[54] - shape[48])
-            #         )
-            #         - 0.5
-            #     )
-            #     * -0.04,
-            # )
-            # bones["mouth_ctrl"].keyframe_insert(data_path="location", index=-1)
+            bones["mouth_ctrl"].location[2] = self.smooth_value(
+                "m_h",
+                2,
+                -self.get_range("mouth_height", np.linalg.norm(mouth[0] - mouth[1]))
+                * 0.06,
+            )
+            bones["mouth_ctrl"].location[0] = self.smooth_value(
+                "m_w",
+                2,
+                (
+                    self.get_range("mouth_width", np.linalg.norm(mouth[2] - mouth[3]))
+                    - 0.5
+                )
+                * -0.04,
+            )
+            bones["mouth_ctrl"].keyframe_insert(data_path="location", index=-1)
 
             cv2.waitKey(1)
 

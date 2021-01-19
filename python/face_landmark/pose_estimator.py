@@ -67,13 +67,7 @@ class PoseEstimator:
         return (self.rotation_vector, self.translation_vector)
 
     def get3dof(self, rvec, tvec):
-        # R, _ = cv2.Rodrigues(rvec)
-        # pitch = math.atan2(R[1, 0], R[0, 0])
-        # yaw = math.atan2(
-        #     -R[2, 0], math.sqrt(math.pow(R[2, 1], 2) + math.pow(R[2, 2], 2))
-        # )
-        # roll = math.atan2(R[2, 1], R[2, 2])
-        # return int(yaw * 57), int(pitch * 57), int(roll * 57)
+        rvec = rvec.ravel()
         return rvec[0], rvec[1], rvec[2] - np.pi
 
     def draw_stick(
@@ -102,7 +96,7 @@ class PoseEstimator:
         ):
             cv2.putText(
                 image,
-                f"{k}:{v}",
+                f"{k}:{v:.2f}",
                 (20, 100 + index * 20),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
@@ -113,4 +107,4 @@ class PoseEstimator:
     def estimate(self, img, surface, nose):
         pose = self.solve(surface)
         self.draw_stick(img, nose, pose[0], pose[1])
-        return pose
+        return pose[0]
