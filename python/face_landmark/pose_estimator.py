@@ -9,10 +9,28 @@ import util
 
 class PoseEstimator:
     def __init__(self, img_size=(480, 640)):
-        self.size = img_size
-
         # 3D model points.
-        self.model_points = np.load(util.get_resource("model_points.npy"))
+
+        # left eye right corner
+        # right eye left corne
+        # nose
+        # left mouth corner
+        # right mouth corner
+        # chin
+
+        self.model_points = np.array(
+            [
+                [392, 231, -25],
+                [443, 231, -25],
+                [421, 291, 0],
+                [381, 350, -25],
+                [449, 350, -25],
+                [417, 360, -24],
+            ],
+            dtype=np.float32,
+        )
+
+        height, width = img_size[0], img_size[1]
 
         self.camera_matrix = np.array(
             [
@@ -25,25 +43,38 @@ class PoseEstimator:
         self.dist_coeffs = np.zeros((4, 1))
 
     def solve(self, image_points):
-        _, rotation_vector, translation_vector = cv2.solvePnP(
-            self.model_points,
-            image_points,
-            self.camera_matrix,
-            self.dist_coeffs,
-            # rvec=self.r_vec,
-            # tvec=self.t_vec,
-            # useExtrinsicGuess=True,
-        )
-        return (rotation_vector, translation_vector)
+        if hasattr(self, "rotation_vector"):
+            (_, self.rotation_vector, self.translation_vector,) = cv2.solvePnP(
+                self.model_points,
+                image_points,
+                self.camera_matrix,
+                self.dist_coeffs,
+                flags=cv2.SOLVEPNP_ITERATIVE,
+                rvec=self.rotation_vector,
+                tvec=self.translation_vector,
+                useExtrinsicGuess=True,
+            )
+        else:
+            (_, self.rotation_vector, self.translation_vector,) = cv2.solvePnP(
+                self.model_points,
+                image_points,
+                self.camera_matrix,
+                self.dist_coeffs,
+                flags=cv2.SOLVEPNP_ITERATIVE,
+                useExtrinsicGuess=False,
+            )
+
+        return (self.rotation_vector, self.translation_vector)
 
     def get3dof(self, rvec, tvec):
-        R, _ = cv2.Rodrigues(rvec)
-        pitch = math.atan2(R[1, 0], R[0, 0])
-        yaw = math.atan2(
-            -R[2, 0], math.sqrt(math.pow(R[2, 1], 2) + math.pow(R[2, 2], 2))
-        )
-        roll = math.atan2(R[2, 1], R[2, 2])
-        return int(yaw * 57), int(pitch * 57), int(roll * 57)
+        # R, _ = cv2.Rodrigues(rvec)
+        # pitch = math.atan2(R[1, 0], R[0, 0])
+        # yaw = math.atan2(
+        #     -R[2, 0], math.sqrt(math.pow(R[2, 1], 2) + math.pow(R[2, 2], 2))
+        # )
+        # roll = math.atan2(R[2, 1], R[2, 2])
+        # return int(yaw * 57), int(pitch * 57), int(roll * 57)
+        return rvec[0], rvec[1], rvec[2] - np.pi
 
     def draw_stick(
         self,

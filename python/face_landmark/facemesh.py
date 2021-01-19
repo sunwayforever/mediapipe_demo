@@ -100,6 +100,20 @@ def remap(x, lo, hi, scale):
     return (x - lo) / (hi - lo + 1e-6) * scale
 
 
+face_points = [
+    # left eye right corner
+    173,
+    # right eye left corner
+    398,
+    # nose
+    1,
+    # mouth left
+    43,
+    # mouth right
+    273,
+    # chin
+    199,
+]
 face_landmark_connections = [
     # Lips.
     61,
@@ -358,13 +372,25 @@ face_landmark_connections = [
 ]
 
 
+all = []
+
+
 def annotate_image(img, surface):
     if surface is None:
         return
     z_min, z_max = surface[:, 2].min(), surface[:, 2].max()
-    for x, y, z in surface:
-        color = 255 - remap(z, z_min, z_max, 255)
-        cv2.circle(img, (x, y), color=(color, color, 0), radius=1, thickness=1)
+    # for x, y, z in surface:
+    #     color = 255 - remap(z, z_min, z_max, 255)
+    #     cv2.circle(img, (x, y), color=(color, color, 0), radius=1, thickness=1)
+
+    for i in face_points:
+        cv2.circle(img, tuple(surface[i][:2]), color=(0, 255, 0), radius=2, thickness=2)
+
+    # print(surface[face_points])
+    # all.append(surface[face_points])
+    # print("mean:")
+    # print(np.stack(all).mean(axis = 0))
+
     for a, b in zip(face_landmark_connections[::2], face_landmark_connections[1::2]):
         cv2.line(
             img,
@@ -391,31 +417,6 @@ def mesh_image(img):
     cv2.destroyAllWindows()
 
 
-def do_mesh_stream(generator=False):
-    mesh = Mesh()
-    vid = cv2.VideoCapture(0)
-    _, img = vid.read()
-    pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
-    while True:
-        succ, img = vid.read()
-        if not succ:
-            continue
-        img = cv2.flip(img, 2)
-        surface = mesh(img)
-        if surface is not None:
-            annotate_image(img, surface)
-            pose = pose_estimator.estimate(img, surface[:, :2], surface[1])
-            util.show_benchmark(img)
-            if generator:
-                yield pose
-        cv2.imshow("", img)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
-    vid.release()
-    cv2.destroyAllWindows()
-
-
 def mesh_stream():
     for _ in mesh_generator():
         pass
@@ -434,7 +435,9 @@ def mesh_generator():
         surface = mesh(img)
         if surface is not None:
             annotate_image(img, surface)
-            pose = pose_estimator.estimate(img, surface[:, :2], surface[1])
+            pose = pose_estimator.estimate(
+                img, surface[face_points, :2], surface[face_points[2]]
+            )
             util.show_benchmark(img)
             yield pose
 

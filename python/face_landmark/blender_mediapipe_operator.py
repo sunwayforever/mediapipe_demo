@@ -4,7 +4,7 @@
 import bpy
 import cv2
 import time
-import numpy
+import numpy as np
 
 import sys
 
@@ -29,11 +29,11 @@ class MediapipeOperator(bpy.types.Operator):
         if not hasattr(self, "smooth"):
             self.smooth = {}
         if not name in self.smooth:
-            self.smooth[name] = numpy.array([value])
+            self.smooth[name] = np.array([value])
         else:
-            self.smooth[name] = numpy.insert(arr=self.smooth[name], obj=0, values=value)
+            self.smooth[name] = np.insert(arr=self.smooth[name], obj=0, values=value)
             if self.smooth[name].size > length:
-                self.smooth[name] = numpy.delete(
+                self.smooth[name] = np.delete(
                     self.smooth[name], self.smooth[name].size - 1, 0
                 )
         sum = 0
@@ -46,9 +46,9 @@ class MediapipeOperator(bpy.types.Operator):
         if not hasattr(self, "range"):
             self.range = {}
         if not name in self.range:
-            self.range[name] = numpy.array([value, value])
+            self.range[name] = np.array([value, value])
         else:
-            self.range[name] = numpy.array(
+            self.range[name] = np.array(
                 [min(value, self.range[name][0]), max(value, self.range[name][1])]
             )
             val_range = self.range[name][1] - self.range[name][0]
@@ -66,19 +66,18 @@ class MediapipeOperator(bpy.types.Operator):
             rotation_vector, _ = next(self._stream)
             # set bone rotation/positions
             bones = bpy.data.objects["RIG-Vincent"].pose.bones
-            # head rotation
-            bones["head_fk"].rotation_euler[0] = (
-                self.smooth_value("h_x", 5, rotation_vector[0]) / 1
+            # yaw
+            bones["head_fk"].rotation_euler[1] = self.smooth_value(
+                "h_x", 5, -rotation_vector[0]
             )
-            # Up/Down
-            bones["head_fk"].rotation_euler[2] = (
-                self.smooth_value("h_y", 5, -rotation_vector[1]) / 1.5
+            # pitch
+            bones["head_fk"].rotation_euler[0] = self.smooth_value(
+                "h_y", 5, rotation_vector[1] - 0.2
             )
-            # Rotate
-            bones["head_fk"].rotation_euler[1] = (
-                self.smooth_value("h_z", 5, rotation_vector[2]) / 1.3
+            # roll
+            bones["head_fk"].rotation_euler[2] = self.smooth_value(
+                "h_z", 5, np.pi - rotation_vector[2]
             )
-            # Left/Right
 
             bones["head_fk"].keyframe_insert(data_path="rotation_euler", index=-1)
 
@@ -87,7 +86,7 @@ class MediapipeOperator(bpy.types.Operator):
             #     "m_h",
             #     2,
             #     -self.get_range(
-            #         "mouth_height", numpy.linalg.norm(shape[62] - shape[66])
+            #         "mouth_height", np.linalg.norm(shape[62] - shape[66])
             #     )
             #     * 0.06,
             # )
@@ -96,7 +95,7 @@ class MediapipeOperator(bpy.types.Operator):
             #     2,
             #     (
             #         self.get_range(
-            #             "mouth_width", numpy.linalg.norm(shape[54] - shape[48])
+            #             "mouth_width", np.linalg.norm(shape[54] - shape[48])
             #         )
             #         - 0.5
             #     )
