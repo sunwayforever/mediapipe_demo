@@ -2,6 +2,9 @@
 #ifndef INU_STREAM_H
 #define INU_STREAM_H
 
-void read(float* output, int output_size);
+namespace PyInuStream {
+    void read(float *output, int output_size);
+    void shape(int *height, int *width);
+}
 
 #endif  // INU_STREAM_H

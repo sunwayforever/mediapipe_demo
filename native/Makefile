@@ -40,7 +40,7 @@ inu_stream.py inu_stream_wrap.cxx:inu_stream.i
 	swig -c++ -python inu_stream.i
 
 _inu_stream.so:inu_stream_wrap.cxx inu_stream.cc
-	g++ $^ -I/usr/include/python3.8/ -lpython3.8 -shared -o $@ -fPIC
+	g++ $^  ${CPPFLAGS} ${CXXFLAGS} -I/usr/include/python3.8/ -lpython3.8 -shared ${LDFLAGS} -o $@ -fPIC ${LDLIBS}
 
 clean:
 	-rm -rf ${OBJ}
