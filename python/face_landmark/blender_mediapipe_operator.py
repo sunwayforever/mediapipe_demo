@@ -68,7 +68,7 @@ class MediapipeOperator(bpy.types.Operator):
             bones = bpy.data.objects["RIG-Vincent"].pose.bones
             # yaw
             bones["head_fk"].rotation_euler[1] = self.smooth_value(
-                "h_x", 5, -rotation_vector[0]
+                "h_x", 5, rotation_vector[0]
             )
             # pitch
             bones["head_fk"].rotation_euler[0] = self.smooth_value(
