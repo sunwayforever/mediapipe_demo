@@ -9,8 +9,9 @@ import numpy as np
 import sys
 
 sys.path.append("/home/sunway/source/mediapipe-demo/python")
+sys.path.append("/home/sunway/source/mediapipe-demo/native")
 
-from face_landmark.facemesh import mesh_generator
+from face_landmark.facemesh import inu_mesh_generator, webcam_mesh_generator
 
 
 class MediapipeOperator(bpy.types.Operator):
@@ -23,7 +24,7 @@ class MediapipeOperator(bpy.types.Operator):
     width = 640
     height = 480
 
-    _stream = mesh_generator()
+    _stream = inu_mesh_generator()
 
     def smooth_value(self, name, length, value):
         if not hasattr(self, "smooth"):

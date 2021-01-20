@@ -432,25 +432,6 @@ def mesh_image(img):
     cv2.destroyAllWindows()
 
 
-def mesh_stream(capture):
-    for _ in mesh_generator(capture):
-        pass
-
-
-def mesh_webcam_stream():
-    vid = cv2.VideoCapture(0)
-    mesh_stream(lambda: cv2.flip(vid.read()[1], 2))
-
-
-def mesh_inu_stream():
-    import inu_stream
-
-    height, width = inu_stream.shape()
-    mesh_stream(
-        lambda: np.reshape(inu_stream.read(height * width * 3), (height, width, 3))
-    )
-
-
 # the generator is used to interact with blender_mediapipe_operator
 def mesh_generator(capture):
     mesh = Mesh()
@@ -474,6 +455,20 @@ def mesh_generator(capture):
     cv2.destroyAllWindows()
 
 
+def webcam_mesh_generator():
+    vid = cv2.VideoCapture(0)
+    return mesh_generator(lambda: cv2.flip(vid.read()[1], 2))
+
+
+def inu_mesh_generator():
+    import inu_stream
+
+    height, width = inu_stream.shape()
+    return mesh_generator(
+        lambda: np.reshape(inu_stream.read(height * width * 3), (height, width, 3))
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
@@ -484,6 +479,7 @@ if __name__ == "__main__":
     if flags.image:
         mesh_image(flags.image)
     elif flags.webcam:
-        mesh_webcam_stream()
+        # just iterate over the generator
+        for _ in webcam_mesh_generator(): pass
     else:
-        mesh_inu_stream()
+        for _ in inu_mesh_generator(): pass
