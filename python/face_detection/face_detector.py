@@ -287,29 +287,43 @@ def detect_image(img):
     cv2.destroyAllWindows()
 
 
-def detect_stream():
+def detect_stream(capture):
     detector = Detector()
-    vid = cv2.VideoCapture(0)
-    _, img = vid.read()
+    img = capture()
     pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
     while True:
-        _, img = vid.read()
-        img = cv2.flip(img, 2)
-
+        img = capture()
         do_detect(detector, pose_estimator, img)
-
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-    vid.release()
     cv2.destroyAllWindows()
+
+
+def detect_webcam_stream():
+    vid = cv2.VideoCapture(0)
+    detect_stream(lambda: cv2.flip(vid.read()[1], 2))
+
+
+def detect_inu_stream():
+    import inu_stream
+
+    height, width = inu_stream.shape()
+    detect_stream(
+        lambda: np.reshape(inu_stream.read(height * width * 3), (height, width, 3))
+    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", type=str)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--image", type=str)
+    group.add_argument("--webcam", action="store_true")
+    group.add_argument("--inu", action="store_true")
     flags = parser.parse_args()
     if flags.image:
         detect_image(flags.image)
+    elif flags.webcam:
+        detect_webcam_stream()
     else:
-        detect_stream()
+        detect_inu_stream()

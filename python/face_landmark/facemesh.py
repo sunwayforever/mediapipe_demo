@@ -432,21 +432,32 @@ def mesh_image(img):
     cv2.destroyAllWindows()
 
 
-def mesh_stream():
-    for _ in mesh_generator():
+def mesh_stream(capture):
+    for _ in mesh_generator(capture):
         pass
 
 
-def mesh_generator():
-    mesh = Mesh()
+def mesh_webcam_stream():
     vid = cv2.VideoCapture(0)
-    _, img = vid.read()
+    mesh_stream(lambda: cv2.flip(vid.read()[1], 2))
+
+
+def mesh_inu_stream():
+    import inu_stream
+
+    height, width = inu_stream.shape()
+    mesh_stream(
+        lambda: np.reshape(inu_stream.read(height * width * 3), (height, width, 3))
+    )
+
+
+# the generator is used to interact with blender_mediapipe_operator
+def mesh_generator(capture):
+    mesh = Mesh()
+    img = capture()
     pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
     while True:
-        succ, img = vid.read()
-        if not succ:
-            continue
-        img = cv2.flip(img, 2)
+        img = capture()
         surface = mesh(img)
         if surface is not None:
             annotate_image(img, surface)
@@ -460,15 +471,19 @@ def mesh_generator():
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-    vid.release()
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", type=str)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--image", type=str)
+    group.add_argument("--webcam", action="store_true")
+    group.add_argument("--inu", action="store_true")
     flags = parser.parse_args()
     if flags.image:
         mesh_image(flags.image)
+    elif flags.webcam:
+        mesh_webcam_stream()
     else:
-        mesh_stream()
+        mesh_inu_stream()

@@ -14,7 +14,8 @@ class VideoCapture {
    public:
     VideoCapture();
     virtual ~VideoCapture();
-    cv::Mat read();
+    cv::Mat Read();
+    void GetShape(int *height, int *width);
 };
 
 #endif  // VIDEO_CAPTURE_H

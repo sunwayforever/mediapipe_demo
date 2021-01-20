@@ -2,7 +2,7 @@ BIN=face_detector.elf
 CC=gcc
 CXX=g++
 
-all:${BIN}
+all:${BIN} swig
 
 SRC=$(wildcard *.cc)
 OBJ := $(patsubst %.cc,%.o,${SRC})

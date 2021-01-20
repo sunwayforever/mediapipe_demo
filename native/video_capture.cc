@@ -71,9 +71,15 @@ VideoCapture::VideoCapture() {
     if (!init()) {
         exit(-1);
     }
+    this->webcam_stream->GetFrame(this->frame);
 }
 
-cv::Mat VideoCapture::read() {
+void VideoCapture::GetShape(int *height, int *width) {
+    *height = this->frame->Height();
+    *width = this->frame->Width();
+}
+
+cv::Mat VideoCapture::Read() {
     CInuError err(eInitError);
     this->webcam_stream->GetFrame(this->frame);
     cv::Mat img;
