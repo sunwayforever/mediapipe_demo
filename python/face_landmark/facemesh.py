@@ -478,7 +478,6 @@ def zmq_mesh_generator():
     socket.connect("tcp://127.0.0.1:5555")
 
     while True:
-        x = socket.recv()
         yield pickle.loads(socket.recv())
 
 
