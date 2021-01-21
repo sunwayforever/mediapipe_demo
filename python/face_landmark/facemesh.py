@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import time
 import sys
 import os
+import zmq
+import pickle
 
 from .pose_estimator import PoseEstimator
 from face_detection.face_cropper import FaceCropper
@@ -469,17 +471,38 @@ def inu_mesh_generator():
     )
 
 
+def zmq_mesh_generator():
+    context = zmq.Context()
+    socket = context.socket(zmq.PULL)
+    socket.setsockopt(zmq.CONFLATE, 1)
+    socket.connect("tcp://127.0.0.1:5555")
+
+    while True:
+        x = socket.recv()
+        yield pickle.loads(socket.recv())
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--image", type=str)
     group.add_argument("--webcam", action="store_true")
     group.add_argument("--inu", action="store_true")
+    parser.add_argument("--stream", action="store_true")
     flags = parser.parse_args()
     if flags.image:
         mesh_image(flags.image)
-    elif flags.webcam:
-        # just iterate over the generator
-        for _ in webcam_mesh_generator(): pass
     else:
-        for _ in inu_mesh_generator(): pass
+        if flags.webcam:
+            generator = webcam_mesh_generator()
+        else:
+            generator = inu_mesh_generator()
+
+        if flags.stream:
+            context = zmq.Context()
+            socket = context.socket(zmq.PUSH)
+            socket.setsockopt(zmq.CONFLATE, 1)
+            socket.bind("tcp://127.0.0.1:5555")
+
+        for data in generator:
+            flags.stream and socket.send(pickle.dumps(data))
