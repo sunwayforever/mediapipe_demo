@@ -30,7 +30,8 @@ int main(int argc, char *argv[]) {
 
     cv::namedWindow("test", cv::WINDOW_NORMAL);
     while (true) {
-        cv::Mat img = capture.Read();
+        cv::Mat img = capture.ReadBGRImage();
+        // cv::Mat depth_img = capture.ReadDepthImage();
         std::vector<Box> boxes = detector.Detect(img);
         AnnotateImage(img, boxes);
         cv::imshow("test", img);

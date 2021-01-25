@@ -5,9 +5,15 @@
 VideoCapture capture;
 
 namespace PyInuStream {
-void read(uint8_t* output, int output_size) {
+void read_bgr_image(uint8_t* output, int output_size) {
     // 8UC3
-    cv::Mat img = capture.Read();
+    cv::Mat img = capture.ReadBGRImage();
+    memcpy(output, img.data, output_size);
+}
+
+void read_depth_image(uint8_t* output, int output_size) {
+    // 16U
+    cv::Mat img = capture.ReadDepthImage();
     memcpy(output, img.data, output_size);
 }
 

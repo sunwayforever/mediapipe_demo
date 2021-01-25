@@ -6,15 +6,18 @@
 
 class VideoCapture {
    private:
-    shared_ptr<const CImageFrame> frame;
+    shared_ptr<const CImageFrame> image_frame;
+    shared_ptr<const CImageFrame> depth_frame;
     shared_ptr<CInuSensorExt> sensor;
     shared_ptr<CImageStream> webcam_stream;
+    shared_ptr<CDepthStream> depth_stream;
     bool init();
 
    public:
     VideoCapture();
     virtual ~VideoCapture();
-    cv::Mat Read();
+    cv::Mat ReadBGRImage();
+    cv::Mat ReadDepthImage();
     void GetShape(int *height, int *width);
 };
 

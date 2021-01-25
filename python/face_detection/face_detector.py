@@ -310,7 +310,9 @@ def detect_inu_stream():
 
     height, width = inu_stream.shape()
     detect_stream(
-        lambda: np.reshape(inu_stream.read(height * width * 3), (height, width, 3))
+        lambda: np.reshape(
+            inu_stream.read_bgr_image(height * width * 3), (height, width, 3)
+        )
     )
 
 

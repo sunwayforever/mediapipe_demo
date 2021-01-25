@@ -23,7 +23,7 @@ class FaceCropper(object):
 
     def _crop_image(self, img, tracking):
         if self.boxes is None or not tracking:
-            print("lose track")
+            # print("lose track")
             self.boxes = self.detector(img)
         ret = crop_image(img, self.boxes)
         if self.img is None or not tracking:

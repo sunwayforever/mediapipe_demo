@@ -128,6 +128,9 @@ mouth_points = [
     292,
 ]
 
+left_face_points = [57, 212, 214, 138]
+right_face_points = [287, 432, 434, 367]
+
 face_landmark_connections = [
     # Lips.
     61,
@@ -403,6 +406,12 @@ def annotate_image(img, surface):
     for i in mouth_points:
         cv2.circle(img, tuple(surface[i][:2]), color=(0, 0, 255), radius=2, thickness=2)
 
+    for i in left_face_points:
+        cv2.circle(img, tuple(surface[i][:2]), color=(255, 0, 0), radius=2, thickness=2)
+
+    for i in right_face_points:
+        cv2.circle(img, tuple(surface[i][:2]), color=(255, 0, 0), radius=2, thickness=2)
+
     # print(surface[face_points])
     # all.append(surface[face_points])
     # print("mean:")
@@ -435,22 +444,43 @@ def mesh_image(img):
 
 
 # the generator is used to interact with blender_mediapipe_operator
-def mesh_generator(capture):
+def mesh_generator(img_capture, depth_capture=None):
     mesh = Mesh()
-    img = capture()
+    img = img_capture()
     pose_estimator = PoseEstimator((img.shape[0], img.shape[1]))
     while True:
-        img = capture()
+        img = img_capture()
         surface = mesh(img)
+        control = {}
+        if depth_capture is not None:
+            depth_surface = depth_capture()
+            a, b = (
+                int(depth_surface.min()),
+                int(depth_surface.max()),
+            )
+            depth_surface = remap(
+                depth_surface.astype(np.int32),
+                a,
+                b,
+                255,
+            )
+            depth_color = cv2.applyColorMap(
+                depth_surface.astype(np.uint8), cv2.COLORMAP_JET
+            )
+            cv2.imshow("cmap", depth_color)
+
         if surface is not None:
             annotate_image(img, surface)
             util.show_benchmark(img)
             rotation_vector = pose_estimator.estimate(
                 img, surface[pose_points, :2], surface[pose_points[2]]
             )
-            yield rotation_vector, surface[mouth_points]
+            control["rotation_vector"] = rotation_vector
+            control["mouth_points"] = surface[mouth_points]
 
-        cv2.imshow("", img)
+            yield control
+
+        cv2.imshow("face", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
@@ -467,7 +497,16 @@ def inu_mesh_generator():
 
     height, width = inu_stream.shape()
     return mesh_generator(
-        lambda: np.reshape(inu_stream.read(height * width * 3), (height, width, 3))
+        lambda: np.reshape(
+            # format: 8UC3
+            inu_stream.read_bgr_image(height * width * 3),
+            (height, width, 3),
+        ),
+        lambda: np.reshape(
+            # format: 16U
+            inu_stream.read_depth_image(height * width * 2).view(np.int16),
+            (height, width, 1),
+        ),
     )
 
 
