@@ -31,6 +31,11 @@ bool VideoCapture::init() {
         return false;
     }
 
+    for (auto const &x : channels.GetChannels()) {
+        std::cout << "type: " << x.second.ChannelType
+                  << " id: " << x.second.ChannelId << std::endl;
+    }
+
     std::cout << "InuSensor Init OK" << std::endl;
 
     err = this->sensor->GetVersion(oVersion);
@@ -52,14 +57,14 @@ bool VideoCapture::init() {
     std::cout << "Sensor Started" << std::endl;
 
     this->webcam_stream = this->sensor->CreateImageStream(9);
-    this->depth_stream = this->sensor->CreateDepthStream(8);
-
     err = this->webcam_stream->Init();
     if (err != eOK) {
         std::cout << "Webcam stream failed to Init" << std::endl;
         return false;
     }
-    err = this->depth_stream->Init();
+
+    this->depth_stream = this->sensor->CreateDepthStream(5);
+    err = this->depth_stream->Init(CDepthStream::eDepthRegistration, false, 9);
     if (err != eOK) {
         std::cout << "Depth stream failed to Init" << std::endl;
         return false;
@@ -86,6 +91,7 @@ VideoCapture::VideoCapture() {
         exit(-1);
     }
     this->webcam_stream->GetFrame(this->image_frame);
+    this->depth_stream->GetFrame(this->depth_frame);
 }
 
 void VideoCapture::GetShape(int *height, int *width) {
@@ -96,14 +102,12 @@ void VideoCapture::GetShape(int *height, int *width) {
 cv::Mat VideoCapture::ReadDepthImage() {
     CInuError err(eInitError);
     this->depth_stream->GetFrame(this->depth_frame);
-    cv::Mat img;
-
     int image_width = this->depth_frame->Width();
     int image_height = this->depth_frame->Height();
 
     assert(this->depth_frame->Format() == CImageFrame::eDepth);
-    img = cv::Mat(image_height, image_width, CV_16U,
-                  (uchar *)this->depth_frame->GetData());
+    cv::Mat img = cv::Mat(image_height, image_width, CV_16U,
+                          (uchar *)this->depth_frame->GetData());
     return img;
 }
 
