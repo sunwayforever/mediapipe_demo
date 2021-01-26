@@ -3,6 +3,9 @@
 
 #include "video_capture.h"
 
+#define kInuWebcamStream 9
+#define kInuDepthStream 5
+
 bool VideoCapture::init() {
     CInuError err(eInitError);
     ECameraName iCameraName = eWebCam;
@@ -56,15 +59,17 @@ bool VideoCapture::init() {
     }
     std::cout << "Sensor Started" << std::endl;
 
-    this->webcam_stream = this->sensor->CreateImageStream(9);
+    this->webcam_stream = this->sensor->CreateImageStream(kInuWebcamStream);
     err = this->webcam_stream->Init();
     if (err != eOK) {
         std::cout << "Webcam stream failed to Init" << std::endl;
         return false;
     }
 
-    this->depth_stream = this->sensor->CreateDepthStream(5);
-    err = this->depth_stream->Init(CDepthStream::eDepthRegistration, false, 9);
+    this->depth_stream = this->sensor->CreateDepthStream(kInuDepthStream);
+    err = this->depth_stream->Init(
+        CDepthStream::eDepthRegistration, false, kInuWebcamStream);
+
     if (err != eOK) {
         std::cout << "Depth stream failed to Init" << std::endl;
         return false;
@@ -106,8 +111,9 @@ cv::Mat VideoCapture::ReadDepthImage() {
     int image_height = this->depth_frame->Height();
 
     assert(this->depth_frame->Format() == CImageFrame::eDepth);
-    cv::Mat img = cv::Mat(image_height, image_width, CV_16U,
-                          (uchar *)this->depth_frame->GetData());
+    cv::Mat img = cv::Mat(
+        image_height, image_width, CV_16U,
+        (uchar *)this->depth_frame->GetData());
     return img;
 }
 
@@ -121,29 +127,33 @@ cv::Mat VideoCapture::ReadBGRImage() {
 
     switch (this->image_frame->Format()) {
         case CImageFrame::eRGB:
-            img = cv::Mat(image_height, image_width, CV_8UC3,
-                          (uchar *)this->image_frame->GetData());
+            img = cv::Mat(
+                image_height, image_width, CV_8UC3,
+                (uchar *)this->image_frame->GetData());
             cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
             break;
         case CImageFrame::eBGR:
-            img = cv::Mat(image_height, image_width, CV_8UC3,
-                          (uchar *)this->image_frame->GetData());
+            img = cv::Mat(
+                image_height, image_width, CV_8UC3,
+                (uchar *)this->image_frame->GetData());
             break;
         case CImageFrame::eBGRA:
-            img = cv::Mat(image_height, image_width, CV_8UC4,
-                          (uchar *)this->image_frame->GetData());
+            img = cv::Mat(
+                image_height, image_width, CV_8UC4,
+                (uchar *)this->image_frame->GetData());
             // TODO: inu bug? the frame format seems like RGBA instead of
             // reported BGRA
             cv::cvtColor(img, img, cv::COLOR_RGBA2BGR);
             break;
         case CImageFrame::eRGBA:
-            img = cv::Mat(image_height, image_width, CV_8UC4,
-                          (uchar *)this->image_frame->GetData());
+            img = cv::Mat(
+                image_height, image_width, CV_8UC4,
+                (uchar *)this->image_frame->GetData());
             cv::cvtColor(img, img, cv::COLOR_RGBA2RGB);
             break;
         default:
-            printf("Got unrecognised format: %d\n",
-                   this->image_frame->Format());
+            printf(
+                "Got unrecognised format: %d\n", this->image_frame->Format());
             break;
     }
     cv::flip(img, img, 2);
