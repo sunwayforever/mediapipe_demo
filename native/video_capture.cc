@@ -114,6 +114,7 @@ cv::Mat VideoCapture::ReadDepthImage() {
     cv::Mat img = cv::Mat(
         image_height, image_width, CV_16U,
         (uchar *)this->depth_frame->GetData());
+    cv::flip(img, img, 2);
     return img;
 }
 

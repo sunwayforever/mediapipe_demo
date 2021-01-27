@@ -12,9 +12,9 @@ sys.path.append("/home/sunway/source/mediapipe-demo/python")
 sys.path.append("/home/sunway/source/mediapipe-demo/native")
 
 from face_landmark.facemesh import (
-    inu_mesh_generator,
-    webcam_mesh_generator,
-    zmq_mesh_generator,
+    inu_generator,
+    webcam_generator,
+    zmq_generator,
 )
 
 
@@ -28,7 +28,7 @@ class MediapipeOperator(bpy.types.Operator):
     width = 640
     height = 480
 
-    _stream = zmq_mesh_generator()
+    _stream = zmq_generator()
 
     def smooth_value(self, name, length, value):
         if not hasattr(self, "smooth"):
@@ -68,7 +68,8 @@ class MediapipeOperator(bpy.types.Operator):
             return {"CANCELLED"}
 
         if event.type == "TIMER":
-            rotation_vector, mouth = next(self._stream)
+            control = next(self._stream)
+            rotation_vector, mouth = control["rotation_vector"], control["mouth_points"]
             # set bone rotation/positions
             bones = bpy.data.objects["RIG-Vincent"].pose.bones
             # yaw

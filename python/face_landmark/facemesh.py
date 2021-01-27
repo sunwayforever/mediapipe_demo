@@ -407,7 +407,7 @@ def annotate_image(img, surface):
         cv2.circle(img, tuple(surface[i][:2]), color=(0, 0, 255), radius=2, thickness=2)
 
     for i in left_face_points:
-        cv2.circle(img, tuple(surface[i][:2]), color=(255, 0, 0), radius=2, thickness=2)
+        cv2.circle(img, tuple(surface[i][:2]), color=(0, 255, 255), radius=2, thickness=2)
 
     for i in right_face_points:
         cv2.circle(img, tuple(surface[i][:2]), color=(255, 0, 0), radius=2, thickness=2)
@@ -452,22 +452,21 @@ def mesh_generator(img_capture, depth_capture=None):
         img = img_capture()
         surface = mesh(img)
         control = {}
+        depth_surface = None
         if depth_capture is not None:
             depth_surface = depth_capture()
             a, b = (
                 int(depth_surface.min()),
                 int(depth_surface.max()),
             )
-            depth_surface = remap(
+            depth_surface_gray = remap(
                 depth_surface.astype(np.int32),
                 a,
                 b,
                 255,
-            )
-            depth_color = cv2.applyColorMap(
-                depth_surface.astype(np.uint8), cv2.COLORMAP_JET
-            )
-            cv2.imshow("cmap", depth_color)
+            ).astype(np.uint8)
+            depth_surface_gray = cv2.applyColorMap(depth_surface_gray, cv2.COLORMAP_JET)
+            cv2.imshow("cmap", depth_surface_gray)
 
         if surface is not None:
             annotate_image(img, surface)
@@ -477,6 +476,9 @@ def mesh_generator(img_capture, depth_capture=None):
             )
             control["rotation_vector"] = rotation_vector
             control["mouth_points"] = surface[mouth_points]
+            left_face_corrd = surface[left_face_points, :2].astype(int)
+            if depth_surface is not None:
+                print([depth_surface[tuple(x)][0] for x in left_face_corrd])
 
             yield control
 
@@ -487,12 +489,12 @@ def mesh_generator(img_capture, depth_capture=None):
     cv2.destroyAllWindows()
 
 
-def webcam_mesh_generator():
+def webcam_generator():
     vid = cv2.VideoCapture(0)
     return mesh_generator(lambda: cv2.flip(vid.read()[1], 2))
 
 
-def inu_mesh_generator():
+def inu_generator():
     import inu_stream
 
     height, width = inu_stream.shape()
@@ -504,13 +506,13 @@ def inu_mesh_generator():
         ),
         lambda: np.reshape(
             # format: 16U
-            inu_stream.read_depth_image(height * width * 2).view(np.int16),
+            inu_stream.read_depth_image(height * width * 2).view(np.uint16),
             (height, width, 1),
         ),
     )
 
 
-def zmq_mesh_generator():
+def zmq_generator():
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
     socket.setsockopt(zmq.CONFLATE, 1)
@@ -532,9 +534,9 @@ if __name__ == "__main__":
         mesh_image(flags.image)
     else:
         if flags.webcam:
-            generator = webcam_mesh_generator()
+            generator = webcam_generator()
         else:
-            generator = inu_mesh_generator()
+            generator = inu_generator()
 
         if flags.stream:
             context = zmq.Context()
