@@ -8,3 +8,5 @@
 /native/inu_stream.so
 /native/inu_stream.py
 /native/_inu_stream.so
+/animoji/view3d
+/animoji/qrc_qml.cpp
