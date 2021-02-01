@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>teapot.mesh</file>
+        <file>Marisol.qml</file>        
         <file>meshes/</file>        
     </qresource>
 </RCC>

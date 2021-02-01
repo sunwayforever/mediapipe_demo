@@ -34,26 +34,26 @@ Window {
             ]
         }
 
+        Marisol {
+            id: boy
+            scale: Qt.vector3d(100, 100, 100)
+        }
+
         /*
-         * Vicent {
-         *     id: boy
-         *     scale: Qt.vector3d(100, 100, 100)
+         * Model {
+         *     source: "teapot.mesh"
+         *     y: -100
+         *     scale: Qt.vector3d(50, 50, 50)
+         *     materials: [
+         *         PrincipledMaterial {
+         *             baseColor: "#41cd52"
+         *             metalness: 0.0
+         *             roughness: 0.1
+         *             opacity: 1.0
+         *         }
+         *     ]
          * }
          */
-
-        Model {
-            source: "teapot.mesh"
-            y: -100
-            scale: Qt.vector3d(50, 50, 50)
-            materials: [
-                PrincipledMaterial {
-                    baseColor: "#41cd52"
-                    metalness: 0.0
-                    roughness: 0.1
-                    opacity: 1.0
-                }
-            ]
-        }
 
         //! [cameras start]
         // The predefined cameras. They have to be part of the scene, i.e. inside the root node.
