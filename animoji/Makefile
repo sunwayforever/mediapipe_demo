@@ -479,32 +479,38 @@ qrc_qml.cpp: qml.qrc \
 		../../../program/qt/6.0.0/gcc_64/bin/rcc \
 		main.qml \
 		Marisol.qml \
-		meshes/font_015_Text_015.mesh \
-		meshes/font_002_Text_002.mesh \
-		meshes/path_002_Circle_001.mesh \
-		meshes/eye_R_cl_head_LOW_001.mesh \
+		meshes/font_011.mesh \
+		meshes/font_001.mesh \
 		meshes/sphere_001.mesh \
-		meshes/head_cl_head_LOW_002.mesh \
-		meshes/eye_L_cl_head_LOW_001.mesh \
-		meshes/font_014_Text_014.mesh \
-		meshes/font_001_Text_001.mesh \
-		meshes/font_008_Text_008.mesh \
-		meshes/font_005_Text_005.mesh \
-		meshes/font_009_Text_009.mesh \
-		meshes/font_003_Text_003.mesh \
-		meshes/font_010_Text_010.mesh \
-		meshes/font_007_Text_007.mesh \
-		meshes/font_006_Text_006.mesh \
-		meshes/font_013_Text_013.mesh \
-		meshes/font_Text.mesh \
-		meshes/font_012_Text_012.mesh \
-		meshes/font_004_Text_004.mesh \
+		meshes/font_007.mesh \
+		meshes/eye_R.mesh \
+		meshes/font_009.mesh \
+		meshes/font_010.mesh \
+		meshes/font_004.mesh \
+		meshes/path_001.mesh \
+		meshes/font_012.mesh \
+		meshes/eye_L.mesh \
+		meshes/font_.mesh \
+		meshes/head.mesh \
+		meshes/path_002.mesh \
+		meshes/font_006.mesh \
+		meshes/font_013.mesh \
+		meshes/font_014.mesh \
+		meshes/font_015.mesh \
+		meshes/font_002.mesh \
+		meshes/font_008.mesh \
+		meshes/path.mesh \
 		meshes/sphere.mesh \
-		meshes/path_Plane_002.mesh \
-		meshes/tooth_up_Cube.mesh \
-		meshes/tooth_down_Cube_001.mesh \
-		meshes/font_011_Text_011.mesh \
-		meshes/path_001_Plane.mesh
+		meshes/tooth_down.mesh \
+		meshes/font_003.mesh \
+		meshes/tooth_up.mesh \
+		meshes/font_005.mesh \
+		animations/head_1_position.qad \
+		animations/head_1_rotation.qad \
+		animations/eye_L_rotation.qad \
+		animations/eye_R_rotation.qad \
+		animations/eye_L_position.qad \
+		animations/eye_R_position.qad
 	/home/sunway/program/qt/6.0.0/gcc_64/bin/rcc -name qml qml.qrc -o qrc_qml.cpp
 
 compiler_moc_predefs_make_all: moc_predefs.h

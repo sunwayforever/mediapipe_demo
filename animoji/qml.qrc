@@ -1,7 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>Marisol.qml</file>        
-        <file>meshes/</file>        
+        <file>Marisol.qml</file>
+        <file>meshes/</file>
+        <file>animations/</file>                
     </qresource>
 </RCC>
