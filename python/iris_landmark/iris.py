@@ -11,6 +11,8 @@ import time
 import sys
 import os
 
+from tensorflow import keras
+
 from face_landmark.iris_cropper import IrisCropper
 import util
 
@@ -32,6 +34,9 @@ class Iris(object):
         assert self.input_width == IMG_WIDTH
         assert self.input_height == IMG_HEIGHT
         self.iris_cropper = IrisCropper()
+        self.model = keras.models.load_model(
+            util.get_resource("../model/iris_landmark")
+        ).signatures["serving_default"]
 
     def __call__(self, img):
         # cropped image, left-upper point of cropped image
@@ -52,21 +57,26 @@ class Iris(object):
             input_data = input_data / 255.0
             input_data = np.expand_dims(input_data, axis=0)
 
-            self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
-            self.interpreter.invoke()
-
-            # 71x3
-            eye_surface = self.interpreter.get_tensor(self.output_details[0]["index"])
-            # 5x3
-            #           2
-            #
-            #    3      0       1
-            #
-            #           4
-            iris_surface = self.interpreter.get_tensor(self.output_details[1]["index"])
+            output = self.model(tf.convert_to_tensor(input_data))
             eye_surface, iris_surface = (
-                np.reshape(eye_surface, (-1, 3)),
-                np.reshape(iris_surface, (-1, 3)),
+                output["output_eyes_contours_and_brows"],
+                output["output_iris"],
+            )
+
+            # self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
+            # self.interpreter.invoke()
+            # # 71x3
+            # eye_surface = self.interpreter.get_tensor(self.output_details[0]["index"])
+            # # 5x3
+            # #           2
+            # #
+            # #    3      0       1
+            # #
+            # #           4
+            # iris_surface = self.interpreter.get_tensor(self.output_details[1]["index"])
+            eye_surface, iris_surface = (
+                np.reshape(eye_surface, (-1, 3)).copy(),
+                np.reshape(iris_surface, (-1, 3)).copy(),
             )
 
             # right eye was horizontally flipped
