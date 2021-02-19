@@ -11,6 +11,9 @@ import time
 import sys
 import os
 
+from tensorflow import keras
+from tensorflow.keras import layers, losses, metrics, models
+
 from .pose_estimator import PoseEstimator
 import util
 
@@ -169,6 +172,9 @@ class Detector(object):
         self.input_height = self.input_details[0]["shape"][2]
         assert self.input_width == IMG_WIDTH
         assert self.input_height == IMG_HEIGHT
+        # self.model = keras.models.load_model(
+        #     util.get_resource("../model/face_detection_front")
+        # ).signatures["serving_default"]
 
     def __call__(self, img):
         # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -188,6 +194,9 @@ class Detector(object):
 
         regressors = self.interpreter.get_tensor(self.output_details[0]["index"])
         classificators = self.interpreter.get_tensor(self.output_details[1]["index"])
+
+        # output = self.model(tf.convert_to_tensor(input_data))
+        # regressors, classificators = output["regressors"], output["classificators"]
 
         raw_boxes = np.reshape(regressors, (-1))
         raw_scores = np.reshape(classificators, (-1))
@@ -322,6 +331,7 @@ if __name__ == "__main__":
     group.add_argument("--image", type=str)
     group.add_argument("--webcam", action="store_true")
     group.add_argument("--inu", action="store_true")
+    parser.add_argument("--tflite", action="store_true")
     flags = parser.parse_args()
     if flags.image:
         detect_image(flags.image)
