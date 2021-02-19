@@ -13,6 +13,9 @@ import os
 import zmq
 import pickle
 
+from tensorflow import keras
+from tensorflow.keras import layers, losses, metrics, models
+
 from .pose_estimator import PoseEstimator
 from face_detection.face_cropper import FaceCropper
 import util
@@ -38,6 +41,10 @@ class Mesh(object):
 
         self.face_cropper = FaceCropper()
 
+        self.model = keras.models.load_model(
+            util.get_resource("../model/face_landmark")
+        ).signatures["serving_default"]
+
     def __call__(self, img):
         # cropped image, left-upper point of cropped image
         util.benchmark_begin("crop+mesh")
@@ -55,12 +62,17 @@ class Mesh(object):
         input_data = input_data / 255.0
         input_data = np.expand_dims(input_data, axis=0)
 
-        self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
-        self.interpreter.invoke()
+        # self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
+        # self.interpreter.invoke()
+        # surface = self.interpreter.get_tensor(self.output_details[0]["index"])
+        # prob = self.interpreter.get_tensor(self.output_details[1]["index"])
+        # surface, prob = np.reshape(surface, (-1, 3)), np.squeeze(prob)
 
-        surface = self.interpreter.get_tensor(self.output_details[0]["index"])
-        prob = self.interpreter.get_tensor(self.output_details[1]["index"])
+        output = self.model(tf.convert_to_tensor(input_data))
+        surface, prob = output["conv2d_20"], output["conv2d_30"]
         surface, prob = np.reshape(surface, (-1, 3)), np.squeeze(prob)
+        surface = np.array(surface)
+
         if sigmoid(prob) < MIN_PROB_THRESH:
             return None
         # test:
@@ -407,7 +419,9 @@ def annotate_image(img, surface):
         cv2.circle(img, tuple(surface[i][:2]), color=(0, 0, 255), radius=2, thickness=2)
 
     for i in left_face_points:
-        cv2.circle(img, tuple(surface[i][:2]), color=(0, 255, 255), radius=2, thickness=2)
+        cv2.circle(
+            img, tuple(surface[i][:2]), color=(0, 255, 255), radius=2, thickness=2
+        )
 
     for i in right_face_points:
         cv2.circle(img, tuple(surface[i][:2]), color=(255, 0, 0), radius=2, thickness=2)

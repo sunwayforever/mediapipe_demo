@@ -172,9 +172,9 @@ class Detector(object):
         self.input_height = self.input_details[0]["shape"][2]
         assert self.input_width == IMG_WIDTH
         assert self.input_height == IMG_HEIGHT
-        # self.model = keras.models.load_model(
-        #     util.get_resource("../model/face_detection_front")
-        # ).signatures["serving_default"]
+        self.model = keras.models.load_model(
+            util.get_resource("../model/face_detection_front")
+        ).signatures["serving_default"]
 
     def __call__(self, img):
         # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -189,14 +189,13 @@ class Detector(object):
         input_data = np.expand_dims(input_data, axis=0)
         input_data = input_data.astype(np.float32)
 
-        self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
-        self.interpreter.invoke()
+        # self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
+        # self.interpreter.invoke()
+        # regressors = self.interpreter.get_tensor(self.output_details[0]["index"])
+        # classificators = self.interpreter.get_tensor(self.output_details[1]["index"])
 
-        regressors = self.interpreter.get_tensor(self.output_details[0]["index"])
-        classificators = self.interpreter.get_tensor(self.output_details[1]["index"])
-
-        # output = self.model(tf.convert_to_tensor(input_data))
-        # regressors, classificators = output["regressors"], output["classificators"]
+        output = self.model(tf.convert_to_tensor(input_data))
+        regressors, classificators = output["regressors"], output["classificators"]
 
         raw_boxes = np.reshape(regressors, (-1))
         raw_scores = np.reshape(classificators, (-1))
