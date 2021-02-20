@@ -9,6 +9,9 @@ import os
 from collections import defaultdict
 
 
+def sigmoid(x):
+    return 1.0 / (1.0 + np.exp(-x))
+
 def get_resource(f):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), f)
 
