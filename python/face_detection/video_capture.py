@@ -9,7 +9,7 @@ class WebCamVideoCapture(object):
         self.vid = cv2.VideoCapture(0)
 
     def capture(self):
-        return cv2.flip(self.vid.read()[1], 2)
+        return cv2.cvtColor(cv2.flip(self.vid.read()[1], 2), cv2.COLOR_BGR2RGB)
 
 
 class InuVideoCapture(object):

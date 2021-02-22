@@ -3,7 +3,7 @@
 from .config import *
 from .video_capture import *
 from .box_detector import *
-from message_bus import *
+from message_broker import *
 
 
 class FaceDetector(object):
@@ -15,7 +15,7 @@ class FaceDetector(object):
             sample_image.shape[1],
         )
         self.box_detector = BoxDetector()
-        self.publisher = Publisher(ZMQ_FACE_DETECTOR)
+        self.publisher = Publisher()
 
     def detect(self):
         while True:
