@@ -8,6 +8,8 @@ import time
 import os
 from collections import defaultdict
 
+def remap(x, lo, hi, scale):
+    return (x - lo) / (hi - lo + 1e-6) * scale
 
 def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))

@@ -5,9 +5,7 @@ import math
 import cv2
 from collections import namedtuple
 
-CroppedImageInfo = namedtuple(
-    "CroppedImageInfo", ["image", "offset_x", "offset_y", "rotation"]
-)
+FaceROI = namedtuple("FaceROI", ["image", "offset_x", "offset_y", "rotation"])
 
 
 class FaceCropper(object):
@@ -39,7 +37,7 @@ class FaceCropper(object):
             (img.shape[0] / 2, img.shape[1] / 2), angle, 1
         )
         img = cv2.warpAffine(img, rot_mat, (img.shape[1], img.shape[0]))
-        return CroppedImageInfo(
+        return FaceROI(
             img,
             x1 - margin_w,
             y1 - margin_h,

@@ -23,15 +23,18 @@ class FaceDetector(object):
         while True:
             img = self.video_capture.capture()
             print("capture")
+            # ZMQ_PUB: image
             self.publisher.send(b"image", img)
             boxes = self.box_detector.detect(img)
             if not boxes:
                 continue
             # NOTE: only one face is detected
             box = boxes[0]
+            # ZMQ_PUB: box
             self.publisher.send(b"box", box)
 
             face = self.face_cropper.crop(img, box)
+            # ZMQ_PUB: face
             self.publisher.send(b"face", face)
 
 

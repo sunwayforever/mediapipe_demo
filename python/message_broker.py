@@ -34,6 +34,10 @@ class Subscriber(object):
         topic, data = raw_data[0], pickle.loads(raw_data[1])
         self.callback(topic, data)
 
+    def loop(self):
+        while True:
+            self.recv()
+
 
 if __name__ == "__main__":
     ctx = zmq.Context()
@@ -46,4 +50,5 @@ if __name__ == "__main__":
 
     while True:
         data = sub_sock.recv_multipart()
+        print(data[0])
         pub_sock.send_multipart(data)
