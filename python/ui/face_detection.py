@@ -36,6 +36,7 @@ class FaceDetectionCallback(object):
         )
 
     def __call__(self, topic, data):
+        print(topic)
         if topic == b"box":
             self.box = data
 

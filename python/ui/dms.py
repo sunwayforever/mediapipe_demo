@@ -14,7 +14,7 @@ if __name__ == "__main__":
     backend = Backend()
 
     router = Router()
-    router.add_route(["image", "box"], FaceDetectionCallback(backend))
+    router.add_route(["image", "box", "face"], FaceDetectionCallback(backend))
     router.start()
 
     app = QGuiApplication(argv)

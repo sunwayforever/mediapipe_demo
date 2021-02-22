@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from .config import *
-from .video_capture import *
-from .box_detector import *
-from message_broker import *
+from .video_capture import WebCamVideoCapture, InuVideoCapture
+from .box_detector import BoxDetector
+from .face_cropper import FaceCropper
+from message_broker import Publisher
 
 
 class FaceDetector(object):
@@ -15,6 +16,7 @@ class FaceDetector(object):
             sample_image.shape[1],
         )
         self.box_detector = BoxDetector()
+        self.face_cropper = FaceCropper()
         self.publisher = Publisher()
 
     def detect(self):
@@ -23,9 +25,14 @@ class FaceDetector(object):
             print("capture")
             self.publisher.send(b"image", img)
             boxes = self.box_detector.detect(img)
-            if boxes:
-                # NOTE: only one face is detected
-                self.publisher.send(b"box", boxes[0])
+            if not boxes:
+                continue
+            # NOTE: only one face is detected
+            box = boxes[0]
+            self.publisher.send(b"box", box)
+
+            face = self.face_cropper.crop(img, box)
+            self.publisher.send(b"face", face)
 
 
 if __name__ == "__main__":
