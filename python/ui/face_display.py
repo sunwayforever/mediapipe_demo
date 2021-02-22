@@ -6,6 +6,8 @@ from PyQt5.QtQml import QQmlApplicationEngine
 from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
 import cv2
 
+from .face_points import *
+
 
 class FaceDisplayCallback(object):
     def __init__(self, backend):
@@ -15,8 +17,63 @@ class FaceDisplayCallback(object):
         self.backend = backend
 
     def annotate_image(self):
+        self.annotate_face_bounding_box()
+        self.annotate_face_landmark()
+
+    def annotate_face_landmark(self):
+        if self.surface is None:
+            return
+
+        for i in pose_points:
+            cv2.circle(
+                self.image,
+                tuple(self.surface[i][:2]),
+                color=(0, 255, 0),
+                radius=2,
+                thickness=2,
+            )
+
+        for i in mouth_points:
+            cv2.circle(
+                self.image,
+                tuple(self.surface[i][:2]),
+                color=(0, 0, 255),
+                radius=2,
+                thickness=2,
+            )
+
+        for i in left_face_points:
+            cv2.circle(
+                self.image,
+                tuple(self.surface[i][:2]),
+                color=(0, 255, 255),
+                radius=2,
+                thickness=2,
+            )
+
+        for i in right_face_points:
+            cv2.circle(
+                self.image,
+                tuple(self.surface[i][:2]),
+                color=(255, 0, 0),
+                radius=2,
+                thickness=2,
+            )
+
+        for a, b in zip(
+            face_landmark_connections[::2], face_landmark_connections[1::2]
+        ):
+            cv2.line(
+                self.image,
+                (self.surface[a][0], self.surface[a][1]),
+                (self.surface[b][0], self.surface[b][1]),
+                color=(0, 255, 0),
+            )
+
+    def annotate_face_bounding_box(self):
         if self.box is None:
             return
+        # face bounding box
         img_height = self.image.shape[0]
         img_width = self.image.shape[1]
 
@@ -47,7 +104,7 @@ class FaceDisplayCallback(object):
             self.image = data
 
         self.annotate_image()
-        
+
         image = QImage(
             self.image,
             self.image.shape[1],

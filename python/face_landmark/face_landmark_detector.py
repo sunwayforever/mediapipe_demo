@@ -16,7 +16,6 @@ import pickle
 from tensorflow import keras
 from tensorflow.keras import layers, losses, metrics, models
 
-from .points import *
 from .config import *
 from message_broker import *
 import util
@@ -83,7 +82,7 @@ class FaceLandmarkDetector(object):
         surface[:, 0] += offset_x
         surface[:, 1] += offset_y
         # ZMQ_PUB: mesh
-        self.publisher.send(b"mesh", surface.astype("float32"))
+        self.publisher.pub(b"mesh", surface.astype("float32"))
 
 
 # the generator is used to interact with blender_mediapipe_operator

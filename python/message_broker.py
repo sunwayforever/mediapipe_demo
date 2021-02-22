@@ -16,7 +16,7 @@ class Publisher(object):
         self.sock = self.ctx.socket(zmq.PUB)
         self.sock.connect(f"tcp://127.0.0.1:{INPUT_PORT}")
 
-    def send(self, topic, data):
+    def pub(self, topic, data):
         self.sock.send_multipart([topic, pickle.dumps(data)])
 
 
@@ -29,14 +29,14 @@ class Subscriber(object):
             self.sock.subscribe(topic)
         self.callback = callback
 
-    def recv(self):
+    def _recv(self):
         raw_data = self.sock.recv_multipart()
         topic, data = raw_data[0], pickle.loads(raw_data[1])
         self.callback(topic, data)
 
     def loop(self):
         while True:
-            self.recv()
+            self._recv()
 
 
 if __name__ == "__main__":

@@ -15,8 +15,7 @@ class MessageHandler(QRunnable):
         self.subscriber = Subscriber(topics, callback)
 
     def run(self):
-        while True:
-            self.subscriber.recv()
+        self.subscriber.loop()
 
 
 class Router(object):
