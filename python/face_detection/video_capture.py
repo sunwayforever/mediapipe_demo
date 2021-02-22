@@ -5,9 +5,11 @@ import cv2
 
 
 class WebCamVideoCapture(object):
+    def __init__(self):
+        self.vid = cv2.VideoCapture(0)
+
     def capture(self):
-        vid = cv2.VideoCapture(0)
-        return cv2.flip(vid.read()[1], 2)
+        return cv2.flip(self.vid.read()[1], 2)
 
 
 class InuVideoCapture(object):

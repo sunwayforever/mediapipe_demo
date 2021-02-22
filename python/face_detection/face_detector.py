@@ -20,6 +20,7 @@ class FaceDetector(object):
     def detect(self):
         while True:
             img = self.video_capture.capture()
+            print("capture")
             self.publisher.send(b"image", img)
             boxes = self.box_detector.detect(img)
             if boxes:

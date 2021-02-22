@@ -20,12 +20,12 @@ class Publisher(object):
 class Subscriber(object):
     def __init__(self, port, callback):
         self.ctx = zmq.Context()
-        self.sock = ctx.socket(zmq.SUB)
+        self.sock = self.ctx.socket(zmq.SUB)
         self.sock.connect(f"tcp://127.0.0.1:{port}")
         self.sock.subscribe(b"")
         self.callback = callback
 
     def recv(self):
-        raw_data = sock.recv_multipart()
+        raw_data = self.sock.recv_multipart()
         topic, data = raw_data[0], pickle.loads(raw_data[1])
-        callback(topic, data)
+        self.callback(topic, data)

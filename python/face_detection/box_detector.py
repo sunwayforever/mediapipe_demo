@@ -106,7 +106,7 @@ class BoxDetector(object):
             box = BoxDetector._calibrate(raw_boxes, i, anchors)
             box = Box(raw_scores[i], box)
             boxes.append(box)
-        return BoxDetector()._NMS(boxes)
+        return BoxDetector._NMS(boxes)
 
     @staticmethod
     def _gen_anchors():
