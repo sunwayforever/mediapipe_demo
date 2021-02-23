@@ -5,7 +5,7 @@ from PyQt5.QtGui import QGuiApplication, QImage
 from PyQt5.QtQml import QQmlApplicationEngine
 from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
 
-from message_broker import *
+from message_broker.transport import Publisher, Subscriber
 
 
 class MessageHandler(QRunnable):

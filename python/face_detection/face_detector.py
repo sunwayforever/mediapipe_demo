@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from .config import *
-from .video_capture import WebCamVideoCapture, InuVideoCapture
 from .box_detector import BoxDetector
 from .face_cropper import FaceCropper
-from message_broker import Publisher
+from message_broker.transport import Publisher
 
 
 class FaceDetector(object):
@@ -36,12 +35,3 @@ class FaceDetector(object):
             face = self.face_cropper.crop(img, box)
             # ZMQ_PUB: face
             self.publisher.pub(b"face", face)
-
-
-if __name__ == "__main__":
-    if VIDEO_CAPTURE == "webcam":
-        detector = FaceDetector(WebCamVideoCapture())
-    else:
-        detector = FaceDetector(InuVideoCapture())
-
-    detector.detect()

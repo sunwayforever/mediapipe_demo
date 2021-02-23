@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# 2021-02-20 14:46
+# 2021-02-23 11:19
 import zmq
 import pickle
-
-# the broker will sub on INPUT_PORT on pub to OUTPUT_PORT
-#
-INPUT_PORT = 5555
-OUTPUT_PORT = 5556
+from .config import *
 
 
 class Publisher(object):
@@ -37,18 +33,3 @@ class Subscriber(object):
     def loop(self):
         while True:
             self._recv()
-
-
-if __name__ == "__main__":
-    ctx = zmq.Context()
-    sub_sock = ctx.socket(zmq.SUB)
-    sub_sock.bind(f"tcp://127.0.0.1:{INPUT_PORT}")
-    sub_sock.subscribe(b"")
-
-    pub_sock = ctx.socket(zmq.PUB)
-    pub_sock.bind(f"tcp://127.0.0.1:{OUTPUT_PORT}")
-
-    while True:
-        data = sub_sock.recv_multipart()
-        print(data[0])
-        pub_sock.send_multipart(data)

@@ -6,7 +6,6 @@ import math
 import argparse
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import time
 import sys
 import os
@@ -17,7 +16,7 @@ from tensorflow import keras
 from tensorflow.keras import layers, losses, metrics, models
 
 from .config import *
-from message_broker import *
+from message_broker.transport import Publisher, Subscriber
 import util
 
 
@@ -83,9 +82,3 @@ class FaceLandmarkDetector(object):
         surface[:, 1] += offset_y
         # ZMQ_PUB: mesh
         self.publisher.pub(b"mesh", surface.astype("float32"))
-
-
-# the generator is used to interact with blender_mediapipe_operator
-
-if __name__ == "__main__":
-    Subscriber(["face"], FaceLandmarkDetector()).loop()

@@ -1,6 +1,7 @@
 import QtQuick 2.2
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.0
+import QtQuick3D 1.15
 
 ApplicationWindow {
     id: applicationWindow
