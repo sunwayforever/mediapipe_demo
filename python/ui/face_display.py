@@ -5,6 +5,7 @@ from PyQt5.QtGui import QGuiApplication, QImage
 from PyQt5.QtQml import QQmlApplicationEngine
 from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
 import cv2
+import random
 
 from .face_points import *
 
@@ -113,3 +114,11 @@ class FaceDisplayCallback(object):
             QImage.Format_RGB888,
         )
         self.backend.update_webcam_image(image)
+        # test
+        self.backend.update_rotation(
+            [
+                random.randint(0, 360),
+                random.randint(0, 360),
+                random.randint(0, 360),
+            ]
+        )

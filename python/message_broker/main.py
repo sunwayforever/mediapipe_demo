@@ -5,7 +5,6 @@
 from .transport import *
 from .config import *
 
-# the broker will sub on INPUT_PORT on pub to OUTPUT_PORT
 if __name__ == "__main__":
     ctx = zmq.Context()
     sub_sock = ctx.socket(zmq.SUB)

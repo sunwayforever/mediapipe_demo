@@ -12,7 +12,7 @@ class WebcamImageProvider(QQuickImageProvider):
     def __init__(self):
         super(WebcamImageProvider, self).__init__(QQuickImageProvider.Image)
         self.image = QImage(256, 256, QImage.Format_RGBA8888)
-        self.image.fill(Qt.red)  # Here's the magic...
+        self.image.fill(Qt.red)
 
     def set_image(self, image):
         self.image = image
@@ -23,6 +23,7 @@ class WebcamImageProvider(QQuickImageProvider):
 
 class Backend(QObject):
     imageChanged = pyqtSignal()
+    rotationChanged = pyqtSignal(list)
 
     def __init__(self):
         QObject.__init__(self)
@@ -31,3 +32,6 @@ class Backend(QObject):
     def update_webcam_image(self, image):
         self.webcam_image_provider.set_image(image)
         self.imageChanged.emit()
+
+    def update_rotation(self, vector):
+        self.rotationChanged.emit(vector)

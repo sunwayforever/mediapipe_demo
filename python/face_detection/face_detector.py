@@ -21,7 +21,6 @@ class FaceDetector(object):
     def detect(self):
         while True:
             img = self.video_capture.capture()
-            print("capture")
             # ZMQ_PUB: image
             self.publisher.pub(b"image", img)
             boxes = self.box_detector.detect(img)
