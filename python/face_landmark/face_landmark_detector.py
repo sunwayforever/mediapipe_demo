@@ -16,6 +16,8 @@ from tensorflow import keras
 from tensorflow.keras import layers, losses, metrics, models
 
 from .config import *
+from .face_points import *
+from .pose_estimator import PoseEstimator
 from message_broker.transport import Publisher, Subscriber
 import util
 
@@ -23,6 +25,7 @@ import util
 class FaceLandmarkDetector(object):
     def __init__(self):
         self.publisher = Publisher()
+        self.pose_estimator = PoseEstimator()
         if NN == "tflite":
             model_path = util.get_resource("../model/face_landmark.tflite")
             self.interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -82,3 +85,7 @@ class FaceLandmarkDetector(object):
         surface[:, 1] += offset_y
         # ZMQ_PUB: mesh
         self.publisher.pub(b"mesh", surface.astype("float32"))
+        # ZMQ_PUB: rotation
+        self.publisher.pub(
+            b"rotation", self.pose_estimator.estimate(surface[pose_points, :2])
+        )

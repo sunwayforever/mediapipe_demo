@@ -51,8 +51,8 @@ ApplicationWindow {
         Connections {
             target: backend
             function onRotationChanged(vector) {
-                cubeModel.eulerRotation.x=vector[0]
-                cubeModel.eulerRotation.y=vector[1]
+                cubeModel.eulerRotation.y=vector[0]
+                cubeModel.eulerRotation.x=vector[1]
                 cubeModel.eulerRotation.z=vector[2]
             }
         }

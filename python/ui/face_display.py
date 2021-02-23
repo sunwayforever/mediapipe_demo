@@ -7,7 +7,7 @@ from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
 import cv2
 import random
 
-from .face_points import *
+from face_landmark.face_points import *
 
 
 class FaceDisplayCallback(object):
@@ -15,6 +15,7 @@ class FaceDisplayCallback(object):
         self.box = None
         self.image = None
         self.surface = None
+        self.rotation = None
         self.backend = backend
 
     def annotate_image(self):
@@ -104,6 +105,12 @@ class FaceDisplayCallback(object):
         if topic == b"image":
             self.image = data
 
+        if topic == b"rotation":
+            self.rotation = data
+
+        if self.image is None:
+            return
+
         self.annotate_image()
 
         image = QImage(
@@ -114,11 +121,12 @@ class FaceDisplayCallback(object):
             QImage.Format_RGB888,
         )
         self.backend.update_webcam_image(image)
-        # test
-        self.backend.update_rotation(
-            [
-                random.randint(0, 360),
-                random.randint(0, 360),
-                random.randint(0, 360),
-            ]
-        )
+
+        if self.rotation:
+            self.backend.update_rotation(
+                [
+                    int(self.rotation[0] * 45),
+                    int(self.rotation[1] * 45),
+                    int(self.rotation[2] * 45),
+                ]
+            )
