@@ -62,7 +62,7 @@ class PoseEstimator:
 
     def _get3dof(self, rvec, tvec):
         rvec = rvec.ravel()
-        return (rvec[0], rvec[1], rvec[2] - np.pi)
+        return (rvec[0], rvec[1], rvec[2] + np.pi)
 
     def estimate(self, image_points):
         self._solve(image_points)

@@ -36,13 +36,16 @@ ApplicationWindow {
 
             Model {
                 id: cubeModel
-                source: "#Cube"
+                source: "meshes/group1.mesh"
+                scale.z: 100
+                scale.y: 100
+                scale.x: 100
                 DefaultMaterial {
                     id: cubeMaterial
-                    diffuseColor: "#4aee45"
+                    diffuseColor: "#ff999999"
                 }
                 materials: cubeMaterial
-                eulerRotation.x: 0
+                eulerRotation.x: -180
                 eulerRotation.y: 0
                 eulerRotation.z: 0
             }
@@ -51,8 +54,11 @@ ApplicationWindow {
         Connections {
             target: backend
             function onRotationChanged(vector) {
+                /* yaw */
                 cubeModel.eulerRotation.y=vector[0]
-                cubeModel.eulerRotation.x=vector[1]
+                /* pitch */
+                cubeModel.eulerRotation.x=vector[1]-180
+                /* row */
                 cubeModel.eulerRotation.z=vector[2]
             }
         }
@@ -84,13 +90,15 @@ ApplicationWindow {
 
         Connections {
             target: backend
-            onImageChanged: webcam.reload()
+            function onImageChanged() {
+                webcam.reload()
+            }
         }
     }
 }
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;height:480;width:640}D{i:1}
+    D{i:0;autoSize:true;height:480;width:640}
 }
 ##^##*/
