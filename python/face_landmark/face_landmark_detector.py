@@ -18,6 +18,7 @@ from tensorflow.keras import layers, losses, metrics, models
 from .config import *
 from .face_points import *
 from .pose_estimator import PoseEstimator
+from .mouth_estimator import MouthEstimator
 from message_broker.transport import Publisher, Subscriber
 import util
 
@@ -26,6 +27,7 @@ class FaceLandmarkDetector(object):
     def __init__(self):
         self.publisher = Publisher()
         self.pose_estimator = PoseEstimator()
+        self.mouth_estimator = MouthEstimator()
         if NN == "tflite":
             model_path = util.get_resource("../model/face_landmark.tflite")
             self.interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -88,4 +90,13 @@ class FaceLandmarkDetector(object):
         # ZMQ_PUB: rotation
         self.publisher.pub(
             b"rotation", self.pose_estimator.estimate(surface[pose_points, :2])
+        )
+        # ZMQ_PUB: mouth
+        self.publisher.pub(
+            b"mouth",
+            self.mouth_estimator.estimate(
+                surface[
+                    mouth_points,
+                ]
+            ),
         )

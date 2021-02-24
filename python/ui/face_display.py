@@ -15,7 +15,6 @@ class FaceDisplayCallback(object):
         self.box = None
         self.image = None
         self.surface = None
-        self.rotation = None
         self.backend = backend
 
     def annotate_image(self):
@@ -105,9 +104,6 @@ class FaceDisplayCallback(object):
         if topic == b"image":
             self.image = data
 
-        if topic == b"rotation":
-            self.rotation = data
-
         if self.image is None:
             return
 
@@ -121,12 +117,3 @@ class FaceDisplayCallback(object):
             QImage.Format_RGB888,
         )
         self.backend.update_webcam_image(image)
-
-        if self.rotation:
-            self.backend.update_rotation(
-                [
-                    int(self.rotation[0] * 45),
-                    int(self.rotation[1] * 45),
-                    int(self.rotation[2] * 45),
-                ]
-            )

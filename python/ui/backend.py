@@ -24,6 +24,7 @@ class WebcamImageProvider(QQuickImageProvider):
 class Backend(QObject):
     imageChanged = pyqtSignal()
     rotationChanged = pyqtSignal(list)
+    mouthChanged = pyqtSignal(bool)
 
     def __init__(self):
         QObject.__init__(self)
@@ -35,3 +36,6 @@ class Backend(QObject):
 
     def update_rotation(self, vector):
         self.rotationChanged.emit(vector)
+
+    def update_mouth(self, is_open):
+        self.mouthChanged.emit(is_open)

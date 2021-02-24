@@ -66,11 +66,58 @@ ApplicationWindow {
         environment: sceneEnvironment
     }
 
-    ColumnLayout {
-        id: columnLayout
+    RowLayout {
+        id: rowLayout
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
         anchors.fill: parent
-        anchors.topMargin: 10
-        anchors.bottomMargin: 10
+        anchors.rightMargin: 388
+        anchors.leftMargin: 0
+        anchors.bottomMargin: 20
+        anchors.topMargin: 0
+        Layout.preferredHeight: 50
+        Layout.fillHeight: true
+        Layout.fillWidth: true
+
+        ColumnLayout {
+            id: columnLayout
+            width: 100
+            height: 100
+            Layout.margins: 10
+            Layout.maximumWidth: 65535
+            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+
+            Layout.fillHeight: false
+            Layout.fillWidth: true
+            Layout.preferredWidth: 20
+
+            Switch {
+                id: mouth
+                text: "mouth"
+                Layout.margins: 5
+                Layout.rowSpan: 1
+                font.underline: false
+                display: AbstractButton.TextBesideIcon
+                checkable: false
+                Layout.preferredHeight: 20
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+            }
+
+            Switch {
+                id: eye
+                text: "eye"
+                Layout.margins: 5
+                Layout.rowSpan: 2
+                checkable: false
+                Layout.preferredHeight: 20
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+            }
+        }
+
 
         Image {
             id: webcam
@@ -78,8 +125,11 @@ ApplicationWindow {
             width: 100
             height: 100
             source: "image://webcam"
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            Layout.margins: 10
+            Layout.preferredWidth: 200
             Layout.fillHeight: true
-            Layout.preferredHeight: 200
+            Layout.preferredHeight: -1
             Layout.fillWidth: true
             fillMode: Image.PreserveAspectFit
             function reload() {
@@ -93,12 +143,17 @@ ApplicationWindow {
             function onImageChanged() {
                 webcam.reload()
             }
+
+            function onMouthChanged(is_open) {
+                mouth.checked=is_open
+            }
         }
     }
+
 }
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;height:480;width:640}
+    D{i:0;autoSize:true;formeditorZoom:1.25;height:480;width:640}D{i:9}
 }
 ##^##*/

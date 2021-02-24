@@ -7,12 +7,22 @@ import numpy as np
 import time
 import os
 from collections import defaultdict
+from scipy.spatial import distance
+
+
+def get_aspect_ratio(top, bottom, left, right):
+    A = distance.euclidean(top, bottom)
+    B = distance.euclidean(left, right)
+    return A / (B + 1e-10)
+
 
 def remap(x, lo, hi, scale):
     return (x - lo) / (hi - lo + 1e-6) * scale
 
+
 def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
+
 
 def get_resource(f):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), f)
