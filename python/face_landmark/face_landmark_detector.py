@@ -45,34 +45,27 @@ class FaceLandmarkDetector(object):
         if topic == b"face":
             self.detect(data)
 
-    def _post_detect(self, face_roi, surface):
-        img, offset_x, offset_y, mat = (
-            face_roi.image,
-            face_roi.offset_x,
-            face_roi.offset_y,
-            face_roi.rotation,
-        )
-        img_height, img_width = img.shape[0], img.shape[1]
-        # scale
-        surface[:, 0] = surface[:, 0] / IMG_WIDTH * img_width
-        surface[:, 1] = surface[:, 1] / IMG_HEIGHT * img_height
-        # rotate
+    def _post_detect(self, surface, mat):
+        # restore coordinates onto webcam image
+        # mat: 3x3 homogeneous
         tmp_surface = surface[:, 0:2]
         tmp_surface = np.concatenate(
             (tmp_surface, np.ones((tmp_surface.shape[0], 1))), axis=1
         )
         tmp_surface = (mat @ tmp_surface.T).T
         surface = np.concatenate((tmp_surface, surface[:, 2:3]), axis=1)
-        # shift
-        surface[:, 0] += offset_x
-        surface[:, 1] += offset_y
         return surface
 
     def detect(self, face_roi):
-        img = face_roi.image
+        face_img, mat = face_roi.image, face_roi.mat
+        scale_mat = util.get_scale_mat(
+            face_img.shape[0] / IMG_WIDTH,
+            face_img.shape[1] / IMG_HEIGHT,
+        )
+        mat = mat @ scale_mat
 
-        input_data = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT)).astype(np.float32)
-        input_data = input_data / 255.0
+        face_img = cv2.resize(face_img, (IMG_WIDTH, IMG_HEIGHT))
+        input_data = face_img.astype(np.float32) / 255.0
         input_data = np.expand_dims(input_data, axis=0)
 
         if NN == "tflite":
@@ -90,8 +83,10 @@ class FaceLandmarkDetector(object):
         if util.sigmoid(prob) < MIN_PROB_THRESH:
             return None
 
-        surface = self._post_detect(face_roi, surface)
+        # ZMQ_PUB: iris
+        self.publisher.pub(b"iris", self.iris_cropper.crop(face_img, surface, mat))
 
+        surface = self._post_detect(surface, mat)
         # ZMQ_PUB: mesh
         self.publisher.pub(b"mesh", surface.astype("float32"))
         # ZMQ_PUB: rotation
@@ -107,5 +102,3 @@ class FaceLandmarkDetector(object):
                 ]
             ),
         )
-        # ZMQ_PUB: iris
-        self.publisher.pub(b"iris", self.iris_cropper.crop(img, surface))

@@ -2,15 +2,16 @@
 # -*- coding: utf-8 -*-
 # 2020-12-15 21:04
 from .face_points import *
+import util
 
 
 class IrisCropper(object):
     def __init__(self):
         pass
 
-    def crop(self, img, surface):
-        img_height = img.shape[0]
-        img_width = img.shape[1]
+    def crop(self, face_img, surface, mat):
+        img_height = face_img.shape[0]
+        img_width = face_img.shape[1]
 
         left_eye_surface = surface[left_eye_points]
         right_eye_surface = surface[right_eye_points]
@@ -26,15 +27,15 @@ class IrisCropper(object):
             )
             # TODO: ~/source/mediapipe/mediapipe/calculators/image/image_cropping_calculator.cc
             margin_w, margin_h = (x2 - x1) // 2, (y2 - y1) // 2
+            translation_mat = util.get_translation_mat(x1 - margin_w, y1 - margin_h)
 
             ret.append(
                 (
-                    img[
+                    face_img[
                         max(int(y1 - margin_h), 0) : int(y2 + margin_h),
                         max(int(x1 - margin_w), 0) : int(x2 + margin_w),
                     ],
-                    x1 - margin_w,
-                    y1 - margin_h,
+                    translation_mat @ mat,
                 )
             )
         return ret

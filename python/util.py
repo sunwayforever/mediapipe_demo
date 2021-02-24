@@ -16,6 +16,14 @@ def get_aspect_ratio(top, bottom, left, right):
     return A / (B + 1e-10)
 
 
+def get_scale_mat(x, y):
+    return np.array([[x, 0, 0], [0, y, 0], [0, 0, 1]])
+
+
+def get_translation_mat(x, y):
+    return np.array([[1, 0, x], [0, 1, y], [0, 0, 1]])
+
+
 def remap(x, lo, hi, scale):
     return (x - lo) / (hi - lo + 1e-6) * scale
 

@@ -3,9 +3,11 @@
 # 2020-12-15 21:04
 import math
 import cv2
+import numpy as np
 from collections import namedtuple
+import util
 
-FaceROI = namedtuple("FaceROI", ["image", "offset_x", "offset_y", "rotation"])
+FaceROI = namedtuple("FaceROI", ["image", "mat"])
 
 
 class FaceCropper(object):
@@ -37,9 +39,11 @@ class FaceCropper(object):
             (img.shape[0] / 2, img.shape[1] / 2), angle, 1
         )
         img = cv2.warpAffine(img, rot_mat, (img.shape[1], img.shape[0]))
-        return FaceROI(
-            img,
-            x1 - margin_w,
-            y1 - margin_h,
-            cv2.getRotationMatrix2D((img.shape[0] / 2, img.shape[1] / 2), -angle, 1),
+
+        translation_mat = util.get_translation_mat(x1 - margin_w, y1 - margin_h)
+        rotation_mat = cv2.getRotationMatrix2D(
+            (img.shape[0] / 2, img.shape[1] / 2), -angle, 1
         )
+        # convert to homogeneous coordinates
+        rotation_mat = np.vstack([rotation_mat, [0, 0, 1]])
+        return FaceROI(img, translation_mat @ rotation_mat)
