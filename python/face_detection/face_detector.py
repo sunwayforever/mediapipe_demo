@@ -32,5 +32,5 @@ class FaceDetector(object):
             self.publisher.pub(b"box", box)
 
             face = self.face_cropper.crop(img, box)
-            # ZMQ_PUB: face
-            self.publisher.pub(b"face", face)
+            # ZMQ_PUB: face_roi
+            self.publisher.pub(b"face_roi", face)

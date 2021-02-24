@@ -10,12 +10,6 @@ class IrisCropper(object):
         pass
 
     def crop(self, face_img, surface, mat):
-        img_height = face_img.shape[0]
-        img_width = face_img.shape[1]
-
-        left_eye_surface = surface[left_eye_points]
-        right_eye_surface = surface[right_eye_points]
-
         ret = []
         for landmark in (left_eye_points, right_eye_points):
             eye_surface = surface[landmark]
@@ -35,7 +29,7 @@ class IrisCropper(object):
                         max(int(y1 - margin_h), 0) : int(y2 + margin_h),
                         max(int(x1 - margin_w), 0) : int(x2 + margin_w),
                     ],
-                    translation_mat @ mat,
+                    mat @ translation_mat,
                 )
             )
         return ret

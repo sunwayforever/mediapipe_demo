@@ -16,9 +16,9 @@ if __name__ == "__main__":
     backend = Backend()
 
     router = Router()
-    router.add_route([b"image", b"box", b"mesh"], FaceDisplayCallback(backend))
+    router.add_route([b"image", b"box", b"mesh", b"eye"], FaceDisplayCallback(backend))
     router.add_route([b"rotation"], RotationDisplayCallback(backend))
-    router.add_route([b"mouth"], ExpressionDisplayCallback(backend))
+    router.add_route([b"mouth_aspect_ratio"], ExpressionDisplayCallback(backend))
     router.start()
 
     app = QGuiApplication(argv)

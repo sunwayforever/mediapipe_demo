@@ -5,4 +5,4 @@ from message_broker.transport import Publisher, Subscriber
 from .face_landmark_detector import FaceLandmarkDetector
 
 if __name__ == "__main__":
-    Subscriber(["face"], FaceLandmarkDetector()).loop()
+    Subscriber([b"face_roi"], FaceLandmarkDetector()).loop()

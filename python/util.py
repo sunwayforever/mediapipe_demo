@@ -20,6 +20,18 @@ def get_scale_mat(x, y):
     return np.array([[x, 0, 0], [0, y, 0], [0, 0, 1]])
 
 
+def restore_coordinates(surface, mat):
+    # mat: 3x3 homogeneous
+    tmp_surface = surface[:, :2]
+    tmp_surface = np.concatenate(
+        (tmp_surface, np.ones((tmp_surface.shape[0], 1))), axis=1
+    )
+    tmp_surface = (mat @ tmp_surface.T).T
+    tmp_surface = tmp_surface[:, :2]
+    surface = np.concatenate((tmp_surface, surface[:, 2:3]), axis=1)
+    return surface
+
+
 def get_translation_mat(x, y):
     return np.array([[1, 0, x], [0, 1, y], [0, 0, 1]])
 

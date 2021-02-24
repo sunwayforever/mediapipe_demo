@@ -42,25 +42,14 @@ class FaceLandmarkDetector(object):
             ).signatures["serving_default"]
 
     def __call__(self, topic, data):
-        if topic == b"face":
+        if topic == b"face_roi":
             self.detect(data)
-
-    def _post_detect(self, surface, mat):
-        # restore coordinates onto webcam image
-        # mat: 3x3 homogeneous
-        tmp_surface = surface[:, 0:2]
-        tmp_surface = np.concatenate(
-            (tmp_surface, np.ones((tmp_surface.shape[0], 1))), axis=1
-        )
-        tmp_surface = (mat @ tmp_surface.T).T
-        surface = np.concatenate((tmp_surface, surface[:, 2:3]), axis=1)
-        return surface
 
     def detect(self, face_roi):
         face_img, mat = face_roi.image, face_roi.mat
         scale_mat = util.get_scale_mat(
-            face_img.shape[0] / IMG_WIDTH,
-            face_img.shape[1] / IMG_HEIGHT,
+            face_img.shape[1] / IMG_WIDTH,
+            face_img.shape[0] / IMG_HEIGHT,
         )
         mat = mat @ scale_mat
 
@@ -83,19 +72,19 @@ class FaceLandmarkDetector(object):
         if util.sigmoid(prob) < MIN_PROB_THRESH:
             return None
 
-        # ZMQ_PUB: iris
-        self.publisher.pub(b"iris", self.iris_cropper.crop(face_img, surface, mat))
+        # ZMQ_PUB: iris_roi
+        self.publisher.pub(b"iris_roi", self.iris_cropper.crop(face_img, surface, mat))
 
-        surface = self._post_detect(surface, mat)
+        surface = util.restore_coordinates(surface, mat)
         # ZMQ_PUB: mesh
         self.publisher.pub(b"mesh", surface.astype("float32"))
         # ZMQ_PUB: rotation
         self.publisher.pub(
             b"rotation", self.pose_estimator.estimate(surface[pose_points, :2])
         )
-        # ZMQ_PUB: mouth
+        # ZMQ_PUB: mouth_aspect_ratio
         self.publisher.pub(
-            b"mouth",
+            b"mouth_aspect_ratio",
             self.mouth_estimator.estimate(
                 surface[
                     mouth_points,

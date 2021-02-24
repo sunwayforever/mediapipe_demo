@@ -5,12 +5,12 @@
 
 class ExpressionDisplayCallback(object):
     def __init__(self, backend):
-        self.mouth = 0
+        self.mouth_aspect_ratio = 0
         self.backend = backend
 
     def __call__(self, topic, data):
 
-        if topic == b"mouth":
-            self.mouth = data
+        if topic == b"mouth_aspect_ratio":
+            self.mouth_aspect_ratio = data
 
-        self.backend.update_mouth(self.mouth > 0.1)
+        self.backend.update_mouth(self.mouth_aspect_ratio > 0.1)
