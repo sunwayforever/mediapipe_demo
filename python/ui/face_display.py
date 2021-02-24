@@ -25,40 +25,13 @@ class FaceDisplayCallback(object):
         if self.surface is None:
             return
 
-        for i in pose_points:
+        for point in self.surface[:, :2]:
             cv2.circle(
                 self.image,
-                tuple(self.surface[i][:2]),
-                color=(0, 255, 0),
-                radius=2,
-                thickness=2,
-            )
-
-        for i in mouth_points:
-            cv2.circle(
-                self.image,
-                tuple(self.surface[i][:2]),
-                color=(0, 0, 255),
-                radius=2,
-                thickness=2,
-            )
-
-        for i in left_face_points:
-            cv2.circle(
-                self.image,
-                tuple(self.surface[i][:2]),
-                color=(0, 255, 255),
-                radius=2,
-                thickness=2,
-            )
-
-        for i in right_face_points:
-            cv2.circle(
-                self.image,
-                tuple(self.surface[i][:2]),
+                tuple(point),
                 color=(255, 0, 0),
-                radius=2,
-                thickness=2,
+                radius=1,
+                thickness=1,
             )
 
         for a, b in zip(

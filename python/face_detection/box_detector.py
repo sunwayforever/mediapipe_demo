@@ -51,12 +51,9 @@ class BoxDetector(object):
             ).signatures["serving_default"]
 
     def detect(self, img):
-        # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # img_rgb = np.stack([img_rgb, img_rgb, img_rgb], axis=2)
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
         # [[file:~/source/mediapipe/mediapipe/modules/face_detection/face_detection_front_cpu.pbtxt::keep_aspect_ratio: true]]
-        input_data, v_padding, h_padding = util.resize(img_rgb, IMG_WIDTH, IMG_HEIGHT)
+        input_data, v_padding, h_padding = util.resize(img, IMG_WIDTH, IMG_HEIGHT)
         input_data = (input_data - 127.5) / 127.5
         input_data = np.expand_dims(input_data, axis=0)
         input_data = input_data.astype(np.float32)

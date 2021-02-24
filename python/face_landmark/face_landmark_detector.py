@@ -19,6 +19,7 @@ from .config import *
 from .face_points import *
 from .pose_estimator import PoseEstimator
 from .mouth_estimator import MouthEstimator
+from .iris_cropper import IrisCropper
 from message_broker.transport import Publisher, Subscriber
 import util
 
@@ -28,6 +29,7 @@ class FaceLandmarkDetector(object):
         self.publisher = Publisher()
         self.pose_estimator = PoseEstimator()
         self.mouth_estimator = MouthEstimator()
+        self.iris_cropper = IrisCropper()
         if NN == "tflite":
             model_path = util.get_resource("../model/face_landmark.tflite")
             self.interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -43,16 +45,33 @@ class FaceLandmarkDetector(object):
         if topic == b"face":
             self.detect(data)
 
-    def detect(self, face_roi):
+    def _post_detect(self, face_roi, surface):
         img, offset_x, offset_y, mat = (
             face_roi.image,
             face_roi.offset_x,
             face_roi.offset_y,
             face_roi.rotation,
         )
+        img_height, img_width = img.shape[0], img.shape[1]
+        # scale
+        surface[:, 0] = surface[:, 0] / IMG_WIDTH * img_width
+        surface[:, 1] = surface[:, 1] / IMG_HEIGHT * img_height
+        # rotate
+        tmp_surface = surface[:, 0:2]
+        tmp_surface = np.concatenate(
+            (tmp_surface, np.ones((tmp_surface.shape[0], 1))), axis=1
+        )
+        tmp_surface = (mat @ tmp_surface.T).T
+        surface = np.concatenate((tmp_surface, surface[:, 2:3]), axis=1)
+        # shift
+        surface[:, 0] += offset_x
+        surface[:, 1] += offset_y
+        return surface
 
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        input_data = cv2.resize(img_rgb, (IMG_WIDTH, IMG_HEIGHT)).astype(np.float32)
+    def detect(self, face_roi):
+        img = face_roi.image
+
+        input_data = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT)).astype(np.float32)
         input_data = input_data / 255.0
         input_data = np.expand_dims(input_data, axis=0)
 
@@ -71,20 +90,8 @@ class FaceLandmarkDetector(object):
         if util.sigmoid(prob) < MIN_PROB_THRESH:
             return None
 
-        img_height, img_width = img.shape[0], img.shape[1]
-        # scale
-        surface[:, 0] = surface[:, 0] / IMG_WIDTH * img_width
-        surface[:, 1] = surface[:, 1] / IMG_HEIGHT * img_height
-        # rotate
-        tmp_surface = surface[:, 0:2]
-        tmp_surface = np.concatenate(
-            (tmp_surface, np.ones((tmp_surface.shape[0], 1))), axis=1
-        )
-        tmp_surface = (mat @ tmp_surface.T).T
-        surface = np.concatenate((tmp_surface, surface[:, 2:3]), axis=1)
-        # shift
-        surface[:, 0] += offset_x
-        surface[:, 1] += offset_y
+        surface = self._post_detect(face_roi, surface)
+
         # ZMQ_PUB: mesh
         self.publisher.pub(b"mesh", surface.astype("float32"))
         # ZMQ_PUB: rotation
@@ -100,3 +107,5 @@ class FaceLandmarkDetector(object):
                 ]
             ),
         )
+        # ZMQ_PUB: iris
+        self.publisher.pub(b"iris", self.iris_cropper.crop(img, surface))
