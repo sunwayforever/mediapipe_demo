@@ -6,6 +6,8 @@ import tensorflow as tf
 from tensorflow import keras
 
 from .config import *
+from .iris_points import *
+from .eye_estimator import EyeEstimator
 from message_broker.transport import Publisher, Subscriber
 import util
 
@@ -13,6 +15,7 @@ import util
 class IrisLandmarkDetector(object):
     def __init__(self):
         self.publisher = Publisher()
+        self.eye_estimator = EyeEstimator()
         if NN == "tflite":
             model_path = util.get_resource("../model/iris_landmark.tflite")
             self.interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -35,7 +38,7 @@ class IrisLandmarkDetector(object):
             # right eye need to be horizontally flipped
             if index == 1:
                 img = cv2.flip(img, 1)
-            
+
             scale_mat = util.get_scale_mat(
                 img.shape[1] / IMG_WIDTH,
                 img.shape[0] / IMG_HEIGHT,
@@ -78,7 +81,14 @@ class IrisLandmarkDetector(object):
             eye_surfaces.append(eye_surface.astype(int))
             iris_surfaces.append(iris_surface.astype(int))
 
-        # ZMQ_PUB: eye
-        self.publisher.pub(b"eye", eye_surfaces)
-        # ZMQ_PUB: iris
-        self.publisher.pub(b"iris", iris_surfaces)
+        # ZMQ_PUB: eye_landmark
+        self.publisher.pub(b"eye_landmark", eye_surfaces)
+        # ZMQ_PUB: iris_landmark
+        self.publisher.pub(b"iris_landmark", iris_surfaces)
+        # ZMQ_PUB: eye_aspect_ration
+        self.publisher.pub(
+            b"eye_aspect_ratio",
+            self.eye_estimator.estimate(
+                [surface[eye_points] for surface in eye_surfaces]
+            ),
+        )

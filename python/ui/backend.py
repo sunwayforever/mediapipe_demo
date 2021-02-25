@@ -25,6 +25,7 @@ class Backend(QObject):
     imageChanged = pyqtSignal()
     rotationChanged = pyqtSignal(list)
     mouthChanged = pyqtSignal(bool)
+    eyeChanged = pyqtSignal(bool, bool)
 
     def __init__(self):
         QObject.__init__(self)
@@ -39,3 +40,6 @@ class Backend(QObject):
 
     def update_mouth(self, is_open):
         self.mouthChanged.emit(is_open)
+
+    def update_eye(self, left_close, right_close):
+        self.eyeChanged.emit(left_close, right_close)

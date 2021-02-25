@@ -85,16 +85,16 @@ class FaceDisplayCallback(object):
         )
 
     def __call__(self, topic, data):
-        if topic == b"box":
+        if topic == b"face_box":
             self.box = data
 
-        if topic == b"mesh":
+        if topic == b"face_landmark":
             self.surface = data
 
         if topic == b"image":
             self.image = data
 
-        if topic == b"eye":
+        if topic == b"eye_landmark":
             self.eye_surfaces = data
 
         if self.image is None:

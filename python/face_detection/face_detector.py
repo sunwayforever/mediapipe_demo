@@ -28,8 +28,8 @@ class FaceDetector(object):
                 continue
             # NOTE: only one face is detected
             box = boxes[0]
-            # ZMQ_PUB: box
-            self.publisher.pub(b"box", box)
+            # ZMQ_PUB: face_box
+            self.publisher.pub(b"face_box", box)
 
             face = self.face_cropper.crop(img, box)
             # ZMQ_PUB: face_roi

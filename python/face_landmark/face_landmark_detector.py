@@ -76,8 +76,8 @@ class FaceLandmarkDetector(object):
         self.publisher.pub(b"iris_roi", self.iris_cropper.crop(face_img, surface, mat))
 
         surface = util.restore_coordinates(surface, mat)
-        # ZMQ_PUB: mesh
-        self.publisher.pub(b"mesh", surface.astype("float32"))
+        # ZMQ_PUB: face_landmark
+        self.publisher.pub(b"face_landmark", surface.astype("float32"))
         # ZMQ_PUB: rotation
         self.publisher.pub(
             b"rotation", self.pose_estimator.estimate(surface[pose_points, :2])

@@ -107,8 +107,19 @@ ApplicationWindow {
             }
 
             Switch {
-                id: eye
-                text: "eye"
+                id: left_eye
+                text: "left eye"
+                Layout.margins: 5
+                Layout.rowSpan: 2
+                checkable: false
+                Layout.preferredHeight: 20
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+            }
+
+            Switch {
+                id: right_eye
+                text: "right eye"
                 Layout.margins: 5
                 Layout.rowSpan: 2
                 checkable: false
@@ -146,6 +157,11 @@ ApplicationWindow {
 
             function onMouthChanged(is_open) {
                 mouth.checked=is_open
+            }
+
+            function onEyeChanged(left,right) {
+                left_eye.checked=left
+                right_eye.checked=right
             }
         }
     }

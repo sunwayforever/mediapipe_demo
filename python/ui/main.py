@@ -16,9 +16,20 @@ if __name__ == "__main__":
     backend = Backend()
 
     router = Router()
-    router.add_route([b"image", b"box", b"mesh", b"eye"], FaceDisplayCallback(backend))
+
+    # ZMQ_SUB: image, face_box, face_landmark eye_landmark
+    router.add_route(
+        [b"image", b"face_box", b"face_landmark", b"eye_landmark"],
+        FaceDisplayCallback(backend),
+    )
+
+    # ZMQ_SUB: rotation
     router.add_route([b"rotation"], RotationDisplayCallback(backend))
-    router.add_route([b"mouth_aspect_ratio"], ExpressionDisplayCallback(backend))
+
+    # ZMQ_SUB: mouth_aspect_ratio, eye_aspect_ratio
+    router.add_route(
+        [b"mouth_aspect_ratio", b"eye_aspect_ratio"], ExpressionDisplayCallback(backend)
+    )
     router.start()
 
     app = QGuiApplication(argv)

@@ -5,4 +5,5 @@ from message_broker.transport import Publisher, Subscriber
 from .face_landmark_detector import FaceLandmarkDetector
 
 if __name__ == "__main__":
+    # ZMQ_SUB: face_roi
     Subscriber([b"face_roi"], FaceLandmarkDetector()).loop()
