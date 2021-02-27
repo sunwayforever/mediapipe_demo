@@ -101,12 +101,4 @@ class FaceDisplayCallback(object):
             return
 
         self.annotate_image()
-
-        image = QImage(
-            self.image,
-            self.image.shape[1],
-            self.image.shape[0],
-            self.image.shape[1] * 3,
-            QImage.Format_RGB888,
-        )
-        self.backend.update_webcam_image(image)
+        self.backend.update_webcam_image(self.image)

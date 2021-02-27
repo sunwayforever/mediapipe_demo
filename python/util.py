@@ -45,8 +45,8 @@ def sigmoid(x):
 
 
 def get_resource(f):
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), f)
-
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f)
+    return path
 
 def resize(img, roi_width, roi_height):
     # height/width
@@ -76,61 +76,3 @@ def resize(img, roi_width, roi_height):
         value=(0, 0, 0),
     )
     return img, v_padding / roi_width, h_padding / roi_height
-
-
-prev_times = defaultdict(lambda: -1)
-benchmarks = {}
-
-
-def benchmark_begin(
-    category,
-):
-    global prev_times
-    prev_times[category] = time.time()
-
-
-def benchmark_end(category):
-    global benchmarks
-    curr = time.time()
-    delta = int((curr - prev_times[category]) * 1000)
-    benchmarks[category] = delta
-
-
-def show_benchmark(img):
-    global benchmarks
-    y = 0
-    for category, v in benchmarks.items():
-        y += 20
-        cv2.putText(
-            img,
-            f"{category}: {v} ms",
-            (20, y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 0, 255),
-            2,
-        )
-
-
-if __name__ == "__main__":
-    vid = cv2.VideoCapture(0)
-    while True:
-        _, orig_img = vid.read()
-        img, _, _ = resize(orig_img, 128, 128)
-        img2 = cv2.resize(orig_img, (128, 128))
-        cv2.imshow("", np.concatenate([img, img2]))
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
-    vid.release()
-    cv2.destroyAllWindows()
-
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("file_name", type=str)
-    # flags = parser.parse_args()
-    # orig_img = cv2.imread(flags.file_name)
-    # img, _, _ = resize(orig_img, 128, 128)
-    # img2 = cv2.resize(orig_img, (128, 128))
-    # cv2.imshow("", np.concatenate([img, img2]))
-    # while cv2.waitKey(1) & 0xFF != ord("q"):
-    #     pass

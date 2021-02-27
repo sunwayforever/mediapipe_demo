@@ -6,36 +6,42 @@ from PyQt5.QtGui import QGuiApplication, QImage
 from PyQt5.QtQml import QQmlApplicationEngine
 from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
 
+from message_broker.transport import QThreadedSubscriber
 from .face_display import FaceDisplayCallback
+from .facenet_display import FacenetDisplayCallback
 from .rotation_display import RotationDisplayCallback
 from .expression_display import ExpressionDisplayCallback
 from .backend import *
-from .router import *
+
 
 if __name__ == "__main__":
     backend = Backend()
 
-    router = Router()
+    subscriber = QThreadedSubscriber()
 
     # ZMQ_SUB: image, face_box, face_landmark eye_landmark
-    router.add_route(
+    subscriber.sub(
         [b"image", b"face_box", b"face_landmark", b"eye_landmark"],
         FaceDisplayCallback(backend),
     )
 
     # ZMQ_SUB: rotation
-    router.add_route([b"rotation"], RotationDisplayCallback(backend))
+    subscriber.sub([b"rotation"], RotationDisplayCallback(backend))
 
     # ZMQ_SUB: mouth_aspect_ratio, eye_aspect_ratio
-    router.add_route(
+    subscriber.sub(
         [b"mouth_aspect_ratio", b"eye_aspect_ratio"], ExpressionDisplayCallback(backend)
     )
-    router.start()
+
+    # ZMQ_SUB: facenet
+    subscriber.sub([b"facenet"], FacenetDisplayCallback(backend))
+    subscriber.loop()
 
     app = QGuiApplication(argv)
     engine = QQmlApplicationEngine()
 
     engine.addImageProvider("webcam", backend.webcam_image_provider)
+    engine.addImageProvider("facenet", backend.facenet_image_provider)
     engine.rootContext().setContextProperty("backend", backend)
     engine.load("ui/main.qml")
 

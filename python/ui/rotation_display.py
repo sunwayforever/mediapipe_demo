@@ -9,7 +9,6 @@ class RotationDisplayCallback(object):
         self.backend = backend
 
     def __call__(self, topic, data):
-
         if topic == b"rotation":
             self.rotation = data
 
