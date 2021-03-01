@@ -19,13 +19,25 @@ class FaceRecognizer(object):
         self.face_db = FaceDatabase()
         self.publisher = Publisher()
 
+        self.last_face_image = None
+        self.last_face_embedding = None
+
     def __call__(self, topic, data):
-        if topic == b"face_roi":
+        if topic == b"face_roi_low_freq":
             self.detect(data)
+        if topic == b"enroll":
+            self.enroll()
+
+    def enroll(self):
+        if self.last_face_image is not None:
+            self.face_db.enroll(self.last_face_image, self.last_face_embedding)
 
     def detect(self, face_roi):
+        self.last_face_image = face_roi.image
         face_image = cv2.resize(face_roi.image, (IMG_WIDTH, IMG_HEIGHT))
         face_image = np.expand_dims(face_image, axis=0)
         embedding = self.model(face_image).numpy().ravel()
+        self.last_face_embedding = embedding
+
         # ZMQ_PUB: facenet
         self.publisher.pub(b"facenet", self.face_db.query(embedding))

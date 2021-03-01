@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-03-01 12:07
-from annoy import AnnoyIndex
-import pickledb
 import os
+import pickle
 
 from .config import *
 import util
@@ -11,30 +10,28 @@ import util
 
 class FaceDatabase(object):
     def __init__(self):
-        self.index = AnnoyIndex(EMBEDDING_SIZE, "angular")
-        facenet_ann = util.get_resource("../data/facenet.ann")
-
-        if os.path.exists(facenet_ann):
-            self.index.load(facenet_ann())
+        self.image_db_file = util.get_resource("../data/image.db")
+        if os.path.exists(self.image_db_file):
+            with open(self.image_db_file, "rb") as f:
+                self.image_db = pickle.load(f)
         else:
-            self.index.build(10)
-        self.image_db = pickledb.load(
-            util.get_resource("../data/image.db"), auto_dump=False
-        )
+            self.image_db = []
 
     def query(self, embedding):
-        index, distance = self.index.get_nns_by_vector(
-            embedding, 1, include_distances=True
+        if len(self.image_db) == 0:
+            return None
+
+        target = min(
+            [[util.compute_distance(embedding, k), v] for (k, v) in self.image_db],
+            key=lambda x: x[0],
         )
-        if len(index) == 0:
+        print("distance:", target[0])
+        if target[0] > FACE_DISTANCE_THRESHOLD:
             return None
 
-        index, distance = index[0], distance[0]
-        face = self.image_db.get(str(index))
+        return target[1]
 
-        if distance > FACE_DISTANCE_THRESHOLD:
-            return None
-        if face is None:
-            print("error: missing face")
-            return None
-        return face
+    def enroll(self, image, embedding):
+        self.image_db.append((embedding, image))
+        with open(self.image_db_file, "wb") as f:
+            pickle.dump(self.image_db, f)

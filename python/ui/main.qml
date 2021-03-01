@@ -7,76 +7,9 @@ ApplicationWindow {
     id: applicationWindow
     visible: true
 
-    View3D {
-        id: view3D
-        width: 300
-        height: 300
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 20
-        anchors.rightMargin: 20
-        z: 1
-
-        SceneEnvironment {
-            id: sceneEnvironment
-            antialiasingMode: SceneEnvironment.MSAA
-            antialiasingQuality: SceneEnvironment.High
-        }
-
-        Node {
-            id: scene
-            DirectionalLight {
-                id: directionalLight
-            }
-
-            PerspectiveCamera {
-                id: camera
-                z: 350
-            }
-
-            Model {
-                id: cubeModel
-                source: "meshes/group1.mesh"
-                scale.z: 100
-                scale.y: 100
-                scale.x: 100
-                DefaultMaterial {
-                    id: cubeMaterial
-                    diffuseColor: "#ff999999"
-                }
-                materials: cubeMaterial
-                eulerRotation.x: -180
-                eulerRotation.y: 0
-                eulerRotation.z: 0
-            }
-        }
-
-        Connections {
-            target: backend
-            function onRotationChanged(vector) {
-                /* yaw */
-                cubeModel.eulerRotation.y=vector[0]
-                /* pitch */
-                cubeModel.eulerRotation.x=vector[1]-180
-                /* row */
-                cubeModel.eulerRotation.z=vector[2]
-            }
-        }
-
-        environment: sceneEnvironment
-    }
-
     RowLayout {
         id: rowLayout
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
         anchors.fill: parent
-        anchors.rightMargin: 388
-        anchors.leftMargin: 0
-        anchors.bottomMargin: 20
-        anchors.topMargin: 0
         Layout.preferredHeight: 50
         Layout.fillHeight: true
         Layout.fillWidth: true
@@ -153,7 +86,8 @@ ApplicationWindow {
             id: columnLayout1
             width: 100
             height: 100
-            Layout.preferredWidth: 40
+            Layout.fillHeight: true
+            Layout.preferredWidth: 50
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
 
@@ -163,8 +97,10 @@ ApplicationWindow {
                 height: 100
                 cache: false
                 source: "image://facenet"
+                Layout.preferredHeight: 160
+                Layout.margins: 10
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-                Layout.fillHeight: true
+                Layout.fillHeight: false
                 Layout.fillWidth: true
                 fillMode: Image.PreserveAspectFit
                 function reload() {
@@ -172,6 +108,96 @@ ApplicationWindow {
                     source="image://facenet"
                 }
             }
+
+            Button {
+                id: enroll
+                text: qsTr("ENROLL")
+                font.underline: false
+                font.bold: true
+                Layout.topMargin: 5
+                Layout.margins: 10
+                enabled: false
+                padding: 0
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.fillWidth: true
+                onClicked: {
+                    backend.enroll()
+                }
+            }
+
+            Item {
+                id: item1
+                width: 200
+                height: 200
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+            }
+
+            View3D {
+                id: view3D
+                width: 300
+                height: 300
+                scale: 1
+                clip: false
+                Layout.preferredWidth: -1
+                Layout.fillHeight: true
+                transformOrigin: Item.Center
+                Layout.margins: 10
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
+                Layout.preferredHeight: 160
+                Layout.fillWidth: true
+                z: 1
+
+                SceneEnvironment {
+                    id: sceneEnvironment
+                    antialiasingMode: SceneEnvironment.MSAA
+                    antialiasingQuality: SceneEnvironment.High
+                }
+
+                Node {
+                    id: scene
+                    DirectionalLight {
+                        id: directionalLight
+                    }
+
+                    PerspectiveCamera {
+                        id: camera
+                        z: 350
+                    }
+
+                    Model {
+                        id: cubeModel
+                        source: "meshes/group1.mesh"
+                        scale.z: 100
+                        scale.y: 100
+                        scale.x: 100
+                        DefaultMaterial {
+                            id: cubeMaterial
+                            diffuseColor: "#ff999999"
+                        }
+                        materials: cubeMaterial
+                        eulerRotation.x: -180
+                        eulerRotation.y: 0
+                        eulerRotation.z: 0
+                    }
+                }
+
+                Connections {
+                    target: backend
+                    function onRotationChanged(vector) {
+                        /* yaw */
+                        cubeModel.eulerRotation.y=vector[0]
+                        /* pitch */
+                        cubeModel.eulerRotation.x=vector[1]-180
+                        /* row */
+                        cubeModel.eulerRotation.z=vector[2]
+                    }
+                }
+
+                environment: sceneEnvironment
+            }
+
+
         }
 
         Connections {
@@ -180,8 +206,9 @@ ApplicationWindow {
                 webcam.reload()
             }
 
-            function onFacenetImageChanged() {
+            function onFacenetImageChanged(enrolled) {
                 facenet.reload()
+                enroll.enabled=!enrolled
             }
 
             function onMouthChanged(is_open) {
@@ -200,6 +227,6 @@ ApplicationWindow {
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;formeditorZoom:1.25;height:480;width:640}
+    D{i:0;autoSize:true;height:480;width:640}
 }
 ##^##*/

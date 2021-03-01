@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-22 16:07
+import cv2
 from PyQt5.QtGui import QGuiApplication, QImage
 from PyQt5.QtQml import QQmlApplicationEngine
-from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
-
+from PyQt5.QtCore import QRunnable, QThreadPool, Qt, QObject
 from PyQt5.QtQuick import QQuickImageProvider
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
+
+from message_broker.transport import Publisher
+import util
 
 
 class ImageProvider(QQuickImageProvider):
-    def __init__(self):
+    def __init__(self, default_image=None):
         super(ImageProvider, self).__init__(QQuickImageProvider.Image)
-        self.image = QImage(256, 256, QImage.Format_RGBA8888)
-        self.image.fill(Qt.red)
+        if default_image:
+            default_image = cv2.cvtColor(
+                cv2.imread(util.get_resource(default_image)), cv2.COLOR_BGR2RGB
+            )
+            self.set_image(default_image)
 
     def set_image(self, image):
         self.image = QImage(
@@ -32,12 +39,13 @@ class Backend(QObject):
     rotationChanged = pyqtSignal(list)
     mouthChanged = pyqtSignal(bool)
     eyeChanged = pyqtSignal(bool, bool)
-    facenetImageChanged = pyqtSignal()
+    facenetImageChanged = pyqtSignal(bool)
 
     def __init__(self):
         QObject.__init__(self)
-        self.webcam_image_provider = ImageProvider()
-        self.facenet_image_provider = ImageProvider()
+        self.publisher = Publisher()
+        self.webcam_image_provider = ImageProvider("../data/blank_webcam.png")
+        self.facenet_image_provider = ImageProvider("../data/unknown_face.png")
 
     def update_webcam_image(self, image):
         self.webcam_image_provider.set_image(image)
@@ -52,6 +60,11 @@ class Backend(QObject):
     def update_eye(self, left_close, right_close):
         self.eyeChanged.emit(left_close, right_close)
 
-    def update_facenet_image(self, image):
+    def update_facenet_image(self, image, enrolled):
         self.facenet_image_provider.set_image(image)
-        self.facenetImageChanged.emit()
+        self.facenetImageChanged.emit(enrolled)
+
+    @pyqtSlot()
+    def enroll(self):
+        # ZMQ_PUB: enroll
+        self.publisher.pub(b"enroll")

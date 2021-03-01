@@ -44,9 +44,14 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
+def compute_distance(a, b):
+    return distance.cosine(a, b)
+
+
 def get_resource(f):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f)
     return path
+
 
 def resize(img, roi_width, roi_height):
     # height/width

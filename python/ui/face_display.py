@@ -84,6 +84,11 @@ class FaceDisplayCallback(object):
             2,
         )
 
+    def reset(self):
+        self.box = None
+        self.surface = None
+        self.eye_surfaces = None
+
     def __call__(self, topic, data):
         if topic == b"face_box":
             self.box = data
@@ -96,6 +101,9 @@ class FaceDisplayCallback(object):
 
         if topic == b"eye_landmark":
             self.eye_surfaces = data
+
+        if topic == b"reset":
+            self.reset()
 
         if self.image is None:
             return

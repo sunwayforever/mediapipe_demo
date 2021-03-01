@@ -19,12 +19,15 @@ class FaceDetector(object):
         self.publisher = Publisher()
 
     def detect(self):
+        face_roi_low_freq_factor = 20
         while True:
             img = self.video_capture.capture()
             # ZMQ_PUB: image
             self.publisher.pub(b"image", img)
             boxes = self.box_detector.detect(img)
             if not boxes:
+                # ZMQ_PUB: reset
+                self.publisher.pub(b"reset")
                 continue
             # NOTE: only one face is detected
             box = boxes[0]
@@ -34,3 +37,10 @@ class FaceDetector(object):
             face = self.face_cropper.crop(img, box)
             # ZMQ_PUB: face_roi
             self.publisher.pub(b"face_roi", face)
+
+            face_roi_low_freq_factor -= 1
+            if face_roi_low_freq_factor == 0:
+                # ZMQ_PUB: face_roi_slow
+                self.publisher.pub(b"face_roi_low_freq", face)
+                # NEXT: configure `topic` with something like `publish interval`
+                face_roi_low_freq_factor = 20
