@@ -5,17 +5,20 @@ import zmq
 import pickle
 from PyQt5.QtCore import QRunnable, QThreadPool
 
+from .throttler import Throttler
 from .config import *
 
 
 class Publisher(object):
     def __init__(self):
+        self.throttler = Throttler()
         self.ctx = zmq.Context()
         self.sock = self.ctx.socket(zmq.PUB)
         self.sock.connect(f"tcp://127.0.0.1:{INPUT_PORT}")
 
-    def pub(self, topic, data = None):
-        self.sock.send_multipart([topic, pickle.dumps(data)])
+    def pub(self, topic, data=None):
+        if self.throttler.check(topic):
+            self.sock.send_multipart([topic, pickle.dumps(data)])
 
 
 class Subscriber(object):

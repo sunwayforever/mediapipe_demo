@@ -85,7 +85,7 @@ class IrisLandmarkDetector(object):
         self.publisher.pub(b"eye_landmark", eye_surfaces)
         # ZMQ_PUB: iris_landmark
         self.publisher.pub(b"iris_landmark", iris_surfaces)
-        # ZMQ_PUB: eye_aspect_ration
+        # ZMQ_PUB: eye_aspect_ratio
         self.publisher.pub(
             b"eye_aspect_ratio",
             self.eye_estimator.estimate(

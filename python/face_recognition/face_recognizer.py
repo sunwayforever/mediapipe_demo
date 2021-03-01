@@ -23,7 +23,7 @@ class FaceRecognizer(object):
         self.last_face_embedding = None
 
     def __call__(self, topic, data):
-        if topic == b"face_roi_low_freq":
+        if topic == b"face_roi_slow":
             self.detect(data)
         if topic == b"enroll":
             self.enroll()
