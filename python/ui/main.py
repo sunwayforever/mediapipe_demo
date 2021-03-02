@@ -7,7 +7,7 @@ from PyQt5.QtQml import QQmlApplicationEngine
 from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
 
 from message_broker.transport import QThreadedSubscriber
-from .face_display import FaceDisplayCallback
+from .webcam_display import WebcamDisplayCallback
 from .facenet_display import FacenetDisplayCallback
 from .rotation_display import RotationDisplayCallback
 from .expression_display import ExpressionDisplayCallback
@@ -19,10 +19,18 @@ if __name__ == "__main__":
 
     subscriber = QThreadedSubscriber()
 
-    # ZMQ_SUB: image, face_box, face_landmark eye_landmark face_reset
+    # ZMQ_SUB: image face_box face_landmark eye_landmark face_reset palm_box palm_reset
     subscriber.sub(
-        [b"image", b"face_box", b"face_landmark", b"eye_landmark", b"face_reset"],
-        FaceDisplayCallback(backend),
+        [
+            b"image",
+            b"face_box",
+            b"face_landmark",
+            b"eye_landmark",
+            b"face_reset",
+            b"palm_box",
+            b"palm_reset",
+        ],
+        WebcamDisplayCallback(backend),
     )
 
     # ZMQ_SUB: rotation

@@ -21,6 +21,8 @@ class Throttler(object):
             b"mouth_aspect_ratio": FPS,
             b"iris_roi": FPS,
             b"rotation": FPS,
+            b"palm_reset": FPS,
+            b"palm_box": FPS,
             # facenet
             b"face_roi_slow": 5,
             b"facenet": 5,
