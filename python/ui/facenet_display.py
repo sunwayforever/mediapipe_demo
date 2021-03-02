@@ -21,7 +21,7 @@ class FacenetDisplayCallback(object):
         if topic == b"facenet":
             self.image = data
 
-        if topic == b"reset":
+        if topic == b"face_reset":
             self.reset()
 
         enrolled = self.image is not None

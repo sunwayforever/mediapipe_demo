@@ -9,10 +9,24 @@ import tensorflow as tf
 import sys
 import os
 from tensorflow import keras
+from collections import namedtuple
 
 import util
+from message_broker.transport import Publisher
 
-from .config import *
+BoxConfig = namedtuple(
+    "BoxConfig",
+    [
+        "model",
+        "img_height",
+        "img_width",
+        "num_coords",
+        "num_boxes",
+        "min_score_thresh",
+        "nms_thresh",
+        "num_keypoint",
+    ],
+)
 
 
 class Anchor:
@@ -24,61 +38,61 @@ class Anchor:
 
 
 class Box:
-    def __init__(self, score, box):
+    def __init__(self, score, box, key_points):
         self.score = score
         self.xmin = box[0]
         self.ymin = box[1]
         self.width = box[2]
         self.height = box[3]
         self.keypoints = []
-        for i in range(NUM_KEYPOINT):
+        for i in range(key_points):
             self.keypoints.append([box[4 + 2 * i], box[4 + 2 * i + 1]])
 
 
 class BoxDetector(object):
-    def __init__(self):
-        self.anchors = BoxDetector._gen_anchors()
-        if NN == "tflite":
-            model_path = util.get_resource("../model/face_detection_front.tflite")
-            self.interpreter = tf.lite.Interpreter(model_path=model_path)
-            self.interpreter.allocate_tensors()
-            self.input_details = self.interpreter.get_input_details()
-            self.output_details = self.interpreter.get_output_details()
-
-        else:
-            self.model = keras.models.load_model(
-                util.get_resource("../model/face_detection_front")
-            ).signatures["serving_default"]
+    def __init__(self, config):
+        self.config = config
+        self.anchors = self._gen_anchors()
+        self.model = keras.models.load_model(
+            util.get_resource(self.config.model)
+        ).signatures["serving_default"]
+        self.publisher = Publisher()
 
     def detect(self, img):
         # img_rgb = np.stack([img_rgb, img_rgb, img_rgb], axis=2)
         # [[file:~/source/mediapipe/mediapipe/modules/face_detection/face_detection_front_cpu.pbtxt::keep_aspect_ratio: true]]
-        input_data, v_padding, h_padding = util.resize(img, IMG_WIDTH, IMG_HEIGHT)
+        input_data, v_padding, h_padding = util.resize(
+            img, self.config.img_width, self.config.img_height
+        )
         input_data = (input_data - 127.5) / 127.5
         input_data = np.expand_dims(input_data, axis=0)
         input_data = input_data.astype(np.float32)
 
-        if NN == "tflite":
-            self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
-            self.interpreter.invoke()
-            regressors = self.interpreter.get_tensor(self.output_details[0]["index"])
-            classificators = self.interpreter.get_tensor(
-                self.output_details[1]["index"]
-            )
-        else:
-            output = self.model(tf.convert_to_tensor(input_data))
-            regressors, classificators = output["regressors"], output["classificators"]
+        output = self.model(tf.convert_to_tensor(input_data))
+        regressors, classificators = output["regressors"], output["classificators"]
 
-        boxes = BoxDetector._post_detect(regressors, self.anchors, classificators)
+        boxes = self._post_detect(regressors, classificators)
 
         restore_x = (
-            lambda x: (x - h_padding) * IMG_WIDTH / ((1 - 2 * h_padding) * IMG_WIDTH)
+            lambda x: (x - h_padding)
+            * self.config.img_width
+            / ((1 - 2 * h_padding) * self.config.img_width)
         )
         restore_y = (
-            lambda y: (y - v_padding) * IMG_HEIGHT / ((1 - 2 * v_padding) * IMG_HEIGHT)
+            lambda y: (y - v_padding)
+            * self.config.img_height
+            / ((1 - 2 * v_padding) * self.config.img_height)
         )
-        restore_width = lambda w: w * IMG_WIDTH / ((1 - 2 * h_padding) * IMG_WIDTH)
-        restore_height = lambda h: h * IMG_HEIGHT / ((1 - 2 * v_padding) * IMG_HEIGHT)
+        restore_width = (
+            lambda w: w
+            * self.config.img_width
+            / ((1 - 2 * h_padding) * self.config.img_width)
+        )
+        restore_height = (
+            lambda h: h
+            * self.config.img_height
+            / ((1 - 2 * v_padding) * self.config.img_height)
+        )
         for box in boxes:
             box.xmin = restore_x(box.xmin)
             box.ymin = restore_y(box.ymin)
@@ -89,28 +103,26 @@ class BoxDetector(object):
                 point[1] = restore_y(point[1])
         return boxes
 
-    @staticmethod
-    def _post_detect(regressors, anchors, classificators):
+    def _post_detect(self, regressors, classificators):
         raw_boxes = np.reshape(regressors, (-1))
         raw_scores = np.reshape(classificators, (-1))
 
         raw_scores = util.sigmoid(np.clip(raw_scores, -100, 100))
         boxes = []
-        for i in range(NUM_BOXES):
-            if raw_scores[i] < MIN_SCORE_THRESH:
+        for i in range(self.config.num_boxes):
+            if raw_scores[i] < self.config.min_score_thresh:
                 continue
 
-            box = BoxDetector._calibrate(raw_boxes, i, anchors)
-            box = Box(raw_scores[i], box)
+            box = self._calibrate(raw_boxes, i)
+            box = Box(raw_scores[i], box, self.config.num_keypoint)
             boxes.append(box)
-        return BoxDetector._NMS(boxes)
+        return self._NMS(boxes)
 
-    @staticmethod
-    def _gen_anchors():
+    def _gen_anchors(self):
         anchors = []
         for stride, count in zip([8, 16], [1, 3]):
-            feature_map_height = math.ceil(1.0 * IMG_HEIGHT / stride)
-            feature_map_width = math.ceil(1.0 * IMG_WIDTH / stride)
+            feature_map_height = math.ceil(1.0 * self.config.img_height / stride)
+            feature_map_width = math.ceil(1.0 * self.config.img_width / stride)
 
             for y in range(feature_map_height):
                 for x in range(feature_map_width):
@@ -124,8 +136,7 @@ class BoxDetector(object):
 
         return anchors
 
-    @staticmethod
-    def _NMS(boxes):
+    def _NMS(self, boxes):
         # Not Max Supression
         if len(boxes) <= 0:
             return np.array([])
@@ -159,13 +170,12 @@ class BoxDetector(object):
             h = np.maximum(0.0, yy2 - yy1 + 1)
             intersection = w * h
             iou = intersection / (area[best] + area[I[0:-1]] - intersection)
-            I = I[np.where(iou <= NMS_THRESH)[0]]
+            I = I[np.where(iou <= self.config.nms_thresh)[0]]
         return [boxes[i] for i in pick]
 
-    @staticmethod
-    def _calibrate(raw_boxes, index, anchors):
-        box_data = np.zeros(NUM_COORDS)
-        box_offset = index * NUM_COORDS
+    def _calibrate(self, raw_boxes, index):
+        box_data = np.zeros(self.config.num_coords)
+        box_offset = index * self.config.num_coords
 
         # raw_box 的 x_center,y_center 是 box 中心坐标距其对应的 anchor 中心坐标的绝
         # 对偏移量与 anchor 的 scale 的比值. w,h 是 box 的绝对大小与 anchor 的 scale
@@ -178,12 +188,18 @@ class BoxDetector(object):
         h = raw_boxes[box_offset + 3]
 
         # x_center, y_center 转换为 box 的绝对中心坐标 (0~1)
-        x_center = x_center / IMG_WIDTH * anchors[index].w + anchors[index].x_center
-        y_center = y_center / IMG_HEIGHT * anchors[index].h + anchors[index].y_center
+        x_center = (
+            x_center / self.config.img_width * self.anchors[index].w
+            + self.anchors[index].x_center
+        )
+        y_center = (
+            y_center / self.config.img_height * self.anchors[index].h
+            + self.anchors[index].y_center
+        )
 
         # h, w 变为 box 的绝对大小 (0~1)
-        h = h / IMG_HEIGHT * anchors[index].h
-        w = w / IMG_WIDTH * anchors[index].w
+        h = h / self.config.img_height * self.anchors[index].h
+        w = w / self.config.img_width * self.anchors[index].w
 
         box_data[0] = x_center - w / 2.0
         box_data[1] = y_center - h / 2.0
@@ -191,11 +207,17 @@ class BoxDetector(object):
         box_data[3] = h
 
         # for 6 keypoint
-        for j in range(NUM_KEYPOINT * 2):
+        for j in range(self.config.num_keypoint * 2):
             box_data[4 + j] = raw_boxes[box_offset + 4 + j]
             if j % 2 == 0:
-                box_data[4 + j] = box_data[4 + j] / IMG_WIDTH + anchors[index].x_center
+                box_data[4 + j] = (
+                    box_data[4 + j] / self.config.img_width
+                    + self.anchors[index].x_center
+                )
             else:
-                box_data[4 + j] = box_data[4 + j] / IMG_HEIGHT + anchors[index].y_center
+                box_data[4 + j] = (
+                    box_data[4 + j] / self.config.img_height
+                    + self.anchors[index].y_center
+                )
 
         return box_data

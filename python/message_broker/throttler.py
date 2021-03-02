@@ -10,7 +10,8 @@ class Throttler(object):
         self.throttle = {
             # webcam
             b"image": FPS,
-            b"reset": FPS,
+            b"face_box": FPS,
+            b"face_reset": FPS,
             b"face_box": FPS,
             b"face_roi": FPS,
             b"face_landmark": FPS,
@@ -33,5 +34,7 @@ class Throttler(object):
         next = self.next_time.get(topic, current)
         if current < next:
             return False
+        if topic not in self.throttle:
+            raise (Exception("unknown topic:", topic))
         self.next_time[topic] = current + 1000 // self.throttle[topic]
         return True

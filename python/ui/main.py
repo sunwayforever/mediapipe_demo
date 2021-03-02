@@ -19,9 +19,9 @@ if __name__ == "__main__":
 
     subscriber = QThreadedSubscriber()
 
-    # ZMQ_SUB: image, face_box, face_landmark eye_landmark reset
+    # ZMQ_SUB: image, face_box, face_landmark eye_landmark face_reset
     subscriber.sub(
-        [b"image", b"face_box", b"face_landmark", b"eye_landmark", b"reset"],
+        [b"image", b"face_box", b"face_landmark", b"eye_landmark", b"face_reset"],
         FaceDisplayCallback(backend),
     )
 
@@ -33,8 +33,8 @@ if __name__ == "__main__":
         [b"mouth_aspect_ratio", b"eye_aspect_ratio"], ExpressionDisplayCallback(backend)
     )
 
-    # ZMQ_SUB: facenet reset
-    subscriber.sub([b"facenet", b"reset"], FacenetDisplayCallback(backend))
+    # ZMQ_SUB: facenet face_reset
+    subscriber.sub([b"facenet", b"face_reset"], FacenetDisplayCallback(backend))
     subscriber.loop()
 
     app = QGuiApplication(argv)

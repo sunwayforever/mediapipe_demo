@@ -18,6 +18,8 @@ class Publisher(object):
 
     def pub(self, topic, data=None):
         if self.throttler.check(topic):
+            if DEBUG:
+                print("pub: ", topic)
             self.sock.send_multipart([topic, pickle.dumps(data)])
 
 
@@ -28,6 +30,8 @@ class Subscriber(object):
         self.sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
 
     def sub(self, topics, callback):
+        if isinstance(topics, bytes):
+            topics = [topics]
         for topic in topics:
             self.sock.subscribe(topic)
         self.callback = callback

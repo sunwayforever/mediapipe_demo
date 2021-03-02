@@ -1,7 +1,18 @@
 #!/bin/bash
 pids=""
-for i in `find ./ -name main.py -printf "%P\n"|tr "/" "."`; do
-    app=${i%.py}
+apps=""
+
+if [[ $# -ne 0 ]]; then
+    for x in $*; do
+        apps="$apps $x.main"
+    done
+else
+    for x in `find ./ -name main.py -printf "%P\n"|tr "/" "."`; do
+        apps="$apps ${x%.py}"
+    done
+fi
+
+for app in $apps; do
     python -m $app &
     pids="$pids $!"
 done

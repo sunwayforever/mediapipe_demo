@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 # 2021-02-20 12:17
 NN = "tf"  # tflite or tf
-VIDEO_CAPTURE = "webcam"  # webcam or inu
 
-IMG_HEIGHT, IMG_WIDTH = 128, 128
+FACE_MODEL = "../model/face_detection_front"
+IMG_HEIGHT = 128
+IMG_WIDTH = 128
 NUM_COORDS = 16
 NUM_BOXES = 896
 MIN_SCORE_THRESH = 0.68

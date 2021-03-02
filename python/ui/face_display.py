@@ -102,7 +102,7 @@ class FaceDisplayCallback(object):
         if topic == b"eye_landmark":
             self.eye_surfaces = data
 
-        if topic == b"reset":
+        if topic == b"face_reset":
             self.reset()
 
         if self.image is None:
