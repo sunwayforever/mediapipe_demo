@@ -11,6 +11,7 @@ from .webcam_display import WebcamDisplayCallback
 from .facenet_display import FacenetDisplayCallback
 from .rotation_display import RotationDisplayCallback
 from .expression_display import ExpressionDisplayCallback
+from .hand_gesture_display import HandGestureDisplayCallback
 from .backend import *
 
 
@@ -19,7 +20,7 @@ if __name__ == "__main__":
 
     subscriber = QThreadedSubscriber()
 
-    # ZMQ_SUB: image face_box face_landmark eye_landmark face_reset palm_box palm_reset hand_landmark
+    # ZMQ_SUB: image face_box face_landmark eye_landmark face_reset palm_box palm_reset hand_landmark hand_gesture
     subscriber.sub(
         [
             b"image",
@@ -44,6 +45,12 @@ if __name__ == "__main__":
 
     # ZMQ_SUB: facenet face_reset
     subscriber.sub([b"facenet", b"face_reset"], FacenetDisplayCallback(backend))
+
+    # ZMQ_SUB: hand_gesture palm_reset
+    subscriber.sub(
+        [b"hand_gesture", b"palm_reset"], HandGestureDisplayCallback(backend)
+    )
+
     subscriber.loop()
 
     app = QGuiApplication(argv)
@@ -51,6 +58,7 @@ if __name__ == "__main__":
 
     engine.addImageProvider("webcam", backend.webcam_image_provider)
     engine.addImageProvider("facenet", backend.facenet_image_provider)
+    engine.addImageProvider("hand", backend.hand_image_provider)
     engine.rootContext().setContextProperty("backend", backend)
     engine.load("ui/main.qml")
 

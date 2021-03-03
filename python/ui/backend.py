@@ -40,12 +40,14 @@ class Backend(QObject):
     mouthChanged = pyqtSignal(bool)
     eyeChanged = pyqtSignal(bool, bool)
     facenetImageChanged = pyqtSignal(bool)
+    handImageChanged = pyqtSignal()
 
     def __init__(self):
         QObject.__init__(self)
         self.publisher = Publisher()
         self.webcam_image_provider = ImageProvider("../data/blank_webcam.png")
         self.facenet_image_provider = ImageProvider("../data/unknown_face.png")
+        self.hand_image_provider = ImageProvider("../data/unknown_gesture.png")
 
     def update_webcam_image(self, image):
         self.webcam_image_provider.set_image(image)
@@ -63,6 +65,11 @@ class Backend(QObject):
     def update_facenet_image(self, image, enrolled):
         self.facenet_image_provider.set_image(image)
         self.facenetImageChanged.emit(enrolled)
+
+    def update_hand_gesture(self, image):
+        # NEXT: hand gesture
+        self.hand_image_provider.set_image(image)
+        self.handImageChanged.emit()
 
     @pyqtSlot()
     def enroll(self):

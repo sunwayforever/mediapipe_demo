@@ -50,7 +50,6 @@ class PalmDetector(object):
         self.publisher.pub(b"palm_roi", self.crop())
 
     def crop(self):
-        # NEXT: palm crop
         # [[file:~/source/mediapipe/mediapipe/modules/hand_landmark/palm_detection_detection_to_roi.pbtxt::node {]]
         #
         #     1 2 3 4

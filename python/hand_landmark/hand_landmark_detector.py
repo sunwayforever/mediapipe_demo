@@ -16,6 +16,7 @@ from tensorflow import keras
 from tensorflow.keras import layers, losses, metrics, models
 
 from .config import *
+from .hand_gesture_estimator import HandGestureEstimator
 from message_broker.transport import Publisher, Subscriber
 import util
 
@@ -23,6 +24,7 @@ import util
 class HandLandmarkDetector(object):
     def __init__(self):
         self.publisher = Publisher()
+        self.gesture_estimator = HandGestureEstimator()
         self.model = keras.models.load_model(
             util.get_resource("../model/hand_landmark")
         ).signatures["serving_default"]
@@ -53,3 +55,6 @@ class HandLandmarkDetector(object):
         surface = util.restore_coordinates(surface, mat)
         # ZMQ_PUB: hand_landmark
         self.publisher.pub(b"hand_landmark", surface.astype("float32"))
+        # ZMQ_PUB: hand_gesture
+        gesture = self.gesture_estimator.estimate(surface)
+        self.publisher.pub(b"hand_gesture", gesture)

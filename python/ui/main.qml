@@ -26,59 +26,121 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.preferredWidth: 20
 
-            Switch {
-                id: mouth
-                text: "mouth"
-                Layout.margins: 5
-                Layout.rowSpan: 1
-                font.underline: false
-                display: AbstractButton.TextBesideIcon
-                checkable: false
-                Layout.preferredHeight: 20
-                Layout.fillHeight: true
+            GroupBox {
+                id: groupBox
+                width: 200
+                height: 200
+                font.bold: true
+                padding: 10
                 Layout.fillWidth: true
+                title: qsTr("Expression")
+
+                ColumnLayout {
+                    id: columnLayout2
+                    anchors.fill: parent
+
+                    Switch {
+                        id: mouth
+                        text: "mouth"
+                        Layout.margins: 5
+                        Layout.rowSpan: 1
+                        font.underline: false
+                        display: AbstractButton.TextBesideIcon
+                        checkable: false
+                        Layout.preferredHeight: 20
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                    }
+
+                    Switch {
+                        id: left_eye
+                        text: "left eye"
+                        Layout.margins: 5
+                        Layout.rowSpan: 2
+                        checkable: false
+                        Layout.preferredHeight: 20
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                    }
+
+                    Switch {
+                        id: right_eye
+                        text: "right eye"
+                        Layout.margins: 5
+                        Layout.rowSpan: 2
+                        checkable: false
+                        Layout.preferredHeight: 20
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                    }
+                }
             }
 
-            Switch {
-                id: left_eye
-                text: "left eye"
-                Layout.margins: 5
-                Layout.rowSpan: 2
-                checkable: false
-                Layout.preferredHeight: 20
-                Layout.fillHeight: true
+            GroupBox {
+                id: groupBox1
+                width: 200
+                height: 200
                 Layout.fillWidth: true
-            }
+                font.bold: true
+                title: qsTr("Hand Gesture")
 
-            Switch {
-                id: right_eye
-                text: "right eye"
-                Layout.margins: 5
-                Layout.rowSpan: 2
-                checkable: false
-                Layout.preferredHeight: 20
-                Layout.fillHeight: true
-                Layout.fillWidth: true
+                ColumnLayout {
+                    id: columnLayout3
+                    anchors.fill: parent
+
+                    Image {
+                        id: hand
+                        cache: false
+                        width: 100
+                        height: 100
+                        source: "image://hand"
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.fillWidth: true
+                        fillMode: Image.PreserveAspectFit
+                        function reload() {
+                            source=""
+                            source="image://hand"
+                        }
+                    }
+                }
             }
         }
 
 
-        Image {
-            id: webcam
-            cache: false
-            width: 100
-            height: 100
-            source: "image://webcam"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+        GroupBox {
+            id: groupBox3
+            width: 200
+            height: 200
+            font.bold: true
             Layout.margins: 10
-            Layout.preferredWidth: 200
+            Layout.preferredWidth: 100
             Layout.fillHeight: true
-            Layout.preferredHeight: -1
             Layout.fillWidth: true
-            fillMode: Image.PreserveAspectFit
-            function reload() {
-                source=""
-                source="image://webcam"
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            title: qsTr("Video")
+
+            ColumnLayout {
+                id: columnLayout5
+                anchors.fill: parent
+
+                Image {
+                    id: webcam
+                    cache: false
+                    width: 100
+                    height: 100
+                    source: "image://webcam"
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.margins: 0
+                    Layout.preferredWidth: -1
+                    Layout.fillHeight: true
+                    Layout.preferredHeight: -1
+                    Layout.fillWidth: true
+                    fillMode: Image.PreserveAspectFit
+                    function reload() {
+                        source=""
+                        source="image://webcam"
+                    }
+                }
             }
         }
 
@@ -86,28 +148,47 @@ ApplicationWindow {
             id: columnLayout1
             width: 100
             height: 100
+            Layout.margins: 10
             Layout.fillHeight: true
-            Layout.preferredWidth: 50
+            Layout.preferredWidth: 20
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignRight | Qt.AlignTop
 
-            Image {
-                id: facenet
-                width: 100
-                height: 100
-                cache: false
-                source: "image://facenet"
-                Layout.preferredHeight: 160
-                Layout.margins: 10
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-                Layout.fillHeight: false
+            GroupBox {
+                id: groupBox2
+                width: 200
+                height: 200
+                Layout.margins: 0
+                font.bold: true
+                Layout.fillHeight: true
                 Layout.fillWidth: true
-                fillMode: Image.PreserveAspectFit
-                function reload() {
-                    source=""
-                    source="image://facenet"
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                title: qsTr("Face Recognizer")
+
+                ColumnLayout {
+                    id: columnLayout4
+                    anchors.fill: parent
+
+                    Image {
+                        id: facenet
+                        width: 100
+                        height: 100
+                        cache: false
+                        source: "image://facenet"
+                        Layout.preferredHeight: 160
+                        Layout.margins: 0
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        fillMode: Image.PreserveAspectFit
+                        function reload() {
+                            source=""
+                            source="image://facenet"
+                        }
+                    }
                 }
             }
+
 
             Button {
                 id: enroll
@@ -115,7 +196,7 @@ ApplicationWindow {
                 font.underline: false
                 font.bold: true
                 Layout.topMargin: 5
-                Layout.margins: 10
+                Layout.margins: 0
                 enabled: false
                 padding: 0
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -142,7 +223,7 @@ ApplicationWindow {
                 Layout.preferredWidth: -1
                 Layout.fillHeight: true
                 transformOrigin: Item.Center
-                Layout.margins: 10
+                Layout.margins: 0
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
                 Layout.preferredHeight: 160
                 Layout.fillWidth: true
@@ -198,6 +279,7 @@ ApplicationWindow {
             }
 
 
+
         }
 
         Connections {
@@ -211,6 +293,10 @@ ApplicationWindow {
                 enroll.enabled=!enrolled
             }
 
+            function onHandImageChanged() {
+                hand.reload()
+            }
+
             function onMouthChanged(is_open) {
                 mouth.checked=is_open
             }
@@ -221,12 +307,15 @@ ApplicationWindow {
             }
         }
 
+
+
+
     }
 
 }
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;height:480;width:640}
+    D{i:0;autoSize:true;height:480;width:640}D{i:12}D{i:16}
 }
 ##^##*/
