@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     subscriber = QThreadedSubscriber()
 
-    # ZMQ_SUB: image face_box face_landmark eye_landmark face_reset palm_box palm_reset
+    # ZMQ_SUB: image face_box face_landmark eye_landmark face_reset palm_box palm_reset hand_landmark
     subscriber.sub(
         [
             b"image",
@@ -29,6 +29,7 @@ if __name__ == "__main__":
             b"face_reset",
             b"palm_box",
             b"palm_reset",
+            b"hand_landmark",
         ],
         WebcamDisplayCallback(backend),
     )

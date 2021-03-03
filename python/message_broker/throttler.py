@@ -23,6 +23,8 @@ class Throttler(object):
             b"rotation": FPS,
             b"palm_reset": FPS,
             b"palm_box": FPS,
+            b"palm_roi": FPS,
+            b"hand_landmark": FPS,
             # facenet
             b"face_roi_slow": 5,
             b"facenet": 5,

@@ -28,8 +28,11 @@ class Subscriber(object):
         self.ctx = zmq.Context()
         self.sock = self.ctx.socket(zmq.SUB)
         self.sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
+        self.callback = None
 
     def sub(self, topics, callback):
+        if self.callback is not None:
+            raise ("mulptiple `sub` invoked")
         if isinstance(topics, bytes):
             topics = [topics]
         for topic in topics:

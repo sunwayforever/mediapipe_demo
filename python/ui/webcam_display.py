@@ -7,6 +7,7 @@ from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
 import cv2
 import random
 
+from hand_landmark.hand_points import *
 from face_landmark.face_points import *
 from iris_landmark.iris_points import *
 
@@ -18,6 +19,7 @@ class WebcamDisplayCallback(object):
         self.surface = None
         self.eye_surfaces = None
         self.palm_box = None
+        self.hand_surface = None
         self.backend = backend
 
     def annotate_image(self):
@@ -25,6 +27,7 @@ class WebcamDisplayCallback(object):
         self.annotate_face_landmark()
         self.annotate_eye_landmark()
         self.annotate_palm_bounding_box()
+        self.annotate_hand_landmark()
 
     def annotate_face_landmark(self):
         if self.surface is None:
@@ -66,16 +69,24 @@ class WebcamDisplayCallback(object):
     def annotate_palm_bounding_box(self):
         if self.palm_box is None:
             return
-        # face bounding box
-        img_height = self.image.shape[0]
-        img_width = self.image.shape[1]
 
-        x1 = int(img_width * self.palm_box.xmin)
-        x2 = int(img_width * (self.palm_box.xmin + self.palm_box.width))
-        y1 = int(img_height * self.palm_box.ymin)
-        y2 = int(img_height * (self.palm_box.ymin + self.palm_box.height))
+        x1 = self.palm_box.xmin
+        x2 = self.palm_box.xmin + self.palm_box.width
+        y1 = self.palm_box.ymin
+        y2 = self.palm_box.ymin + self.palm_box.height
 
         cv2.rectangle(self.image, (x1, y1), (x2, y2), (255, 0, 0), 2)
+        for i, kp in enumerate(self.palm_box.keypoints):
+            cv2.putText(
+                self.image,
+                f"{i}",
+                (kp[0], kp[1]),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                1,
+            )
+
         cv2.putText(
             self.image,
             "{:.2f}".format(self.palm_box.score),
@@ -89,14 +100,11 @@ class WebcamDisplayCallback(object):
     def annotate_face_bounding_box(self):
         if self.face_box is None:
             return
-        # face bounding box
-        img_height = self.image.shape[0]
-        img_width = self.image.shape[1]
 
-        x1 = int(img_width * self.face_box.xmin)
-        x2 = int(img_width * (self.face_box.xmin + self.face_box.width))
-        y1 = int(img_height * self.face_box.ymin)
-        y2 = int(img_height * (self.face_box.ymin + self.face_box.height))
+        x1 = self.face_box.xmin
+        x2 = self.face_box.xmin + self.face_box.width
+        y1 = self.face_box.ymin
+        y2 = self.face_box.ymin + self.face_box.height
 
         cv2.rectangle(self.image, (x1, y1), (x2, y2), (255, 0, 0), 2)
         cv2.putText(
@@ -109,6 +117,28 @@ class WebcamDisplayCallback(object):
             2,
         )
 
+    def annotate_hand_landmark(self):
+        if self.hand_surface is None:
+            return
+
+        for point in self.hand_surface[:, :2]:
+            cv2.circle(
+                self.image,
+                tuple(point),
+                color=(255, 255, 0),
+                radius=2,
+                thickness=2,
+            )
+        for a, b in zip(
+            hand_landmark_connections[::2], hand_landmark_connections[1::2]
+        ):
+            cv2.line(
+                self.image,
+                (self.hand_surface[a][0], self.hand_surface[a][1]),
+                (self.hand_surface[b][0], self.hand_surface[b][1]),
+                color=(0, 255, 0),
+            )
+
     def reset_face(self):
         self.face_box = None
         self.surface = None
@@ -116,6 +146,7 @@ class WebcamDisplayCallback(object):
 
     def reset_palm(self):
         self.palm_box = None
+        self.hand_surface = None
 
     def __call__(self, topic, data):
         if topic == b"face_box":
@@ -138,6 +169,9 @@ class WebcamDisplayCallback(object):
 
         if topic == b"palm_box":
             self.palm_box = data
+
+        if topic == b"hand_landmark":
+            self.hand_surface = data
 
         if self.image is None:
             return

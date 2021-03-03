@@ -38,14 +38,14 @@ class Anchor:
 
 
 class Box:
-    def __init__(self, score, box, key_points):
+    def __init__(self, score, box, num_key_points):
         self.score = score
         self.xmin = box[0]
         self.ymin = box[1]
         self.width = box[2]
         self.height = box[3]
         self.keypoints = []
-        for i in range(key_points):
+        for i in range(num_key_points):
             self.keypoints.append([box[4 + 2 * i], box[4 + 2 * i + 1]])
 
 
@@ -59,6 +59,8 @@ class BoxDetector(object):
         self.publisher = Publisher()
 
     def detect(self, img):
+        self.img_width = img.shape[1]
+        self.img_height = img.shape[0]
         # img_rgb = np.stack([img_rgb, img_rgb, img_rgb], axis=2)
         # [[file:~/source/mediapipe/mediapipe/modules/face_detection/face_detection_front_cpu.pbtxt::keep_aspect_ratio: true]]
         input_data, v_padding, h_padding = util.resize(
@@ -76,31 +78,37 @@ class BoxDetector(object):
         restore_x = (
             lambda x: (x - h_padding)
             * self.config.img_width
+            * self.img_width
             / ((1 - 2 * h_padding) * self.config.img_width)
         )
         restore_y = (
             lambda y: (y - v_padding)
             * self.config.img_height
+            * self.img_height
             / ((1 - 2 * v_padding) * self.config.img_height)
         )
         restore_width = (
             lambda w: w
             * self.config.img_width
+            * self.img_width
             / ((1 - 2 * h_padding) * self.config.img_width)
         )
         restore_height = (
             lambda h: h
             * self.config.img_height
+            * self.img_height
             / ((1 - 2 * v_padding) * self.config.img_height)
         )
         for box in boxes:
-            box.xmin = restore_x(box.xmin)
-            box.ymin = restore_y(box.ymin)
-            box.width = restore_width(box.width)
-            box.height = restore_height(box.height)
+            box.xmin = int(restore_x(box.xmin))
+            box.ymin = int(restore_y(box.ymin))
+            box.width = int(restore_width(box.width))
+            box.height = int(restore_height(box.height))
             for point in box.keypoints:
-                point[0] = restore_x(point[0])
-                point[1] = restore_y(point[1])
+                point[0] = int(restore_x(point[0]))
+                point[1] = int(restore_y(point[1]))
+
+        # 最终输出坐标是 webcam image 上的绝对坐标
         return boxes
 
     def _post_detect(self, regressors, classificators):
@@ -112,8 +120,7 @@ class BoxDetector(object):
         for i in range(self.config.num_boxes):
             if raw_scores[i] < self.config.min_score_thresh:
                 continue
-
-            box = self._calibrate(raw_boxes, i)
+            box = self._calibrate_box(raw_boxes, i)
             box = Box(raw_scores[i], box, self.config.num_keypoint)
             boxes.append(box)
         return self._NMS(boxes)
@@ -173,7 +180,7 @@ class BoxDetector(object):
             I = I[np.where(iou <= self.config.nms_thresh)[0]]
         return [boxes[i] for i in pick]
 
-    def _calibrate(self, raw_boxes, index):
+    def _calibrate_box(self, raw_boxes, index):
         box_data = np.zeros(self.config.num_coords)
         box_offset = index * self.config.num_coords
 

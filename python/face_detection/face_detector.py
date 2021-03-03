@@ -53,13 +53,10 @@ class FaceDetector(object):
         self.publisher.pub(b"face_roi_slow", face)
 
     def crop(self):
-        img_height = self.image.shape[0]
-        img_width = self.image.shape[1]
-
-        x1 = int(img_width * self.box.xmin)
-        x2 = int(img_width * (self.box.xmin + self.box.width))
-        y1 = int(img_height * self.box.ymin)
-        y2 = int(img_height * (self.box.ymin + self.box.height))
+        x1 = self.box.xmin
+        x2 = self.box.xmin + self.box.width
+        y1 = self.box.ymin
+        y2 = self.box.ymin + self.box.height
 
         # [[file:~/source/mediapipe/mediapipe/modules/face_landmark/face_detection_front_detection_to_roi.pbtxt::\[mediapipe.RectTransformationCalculatorOptions.ext\] {]]
         margin_w, margin_h = (x2 - x1) // 4, (y2 - y1) // 4

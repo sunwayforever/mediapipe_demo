@@ -46,3 +46,50 @@ class PalmDetector(object):
         self.box = boxes[0]
         # ZMQ_PUB: palm_box
         self.publisher.pub(b"palm_box", self.box)
+        # ZMQ_PUB: palm_roi
+        self.publisher.pub(b"palm_roi", self.crop())
+
+    def crop(self):
+        # NEXT: palm crop
+        # [[file:~/source/mediapipe/mediapipe/modules/hand_landmark/palm_detection_detection_to_roi.pbtxt::node {]]
+        #
+        #     1 2 3 4
+        #  6
+        #     5
+        #        0
+        x1 = self.box.xmin
+        x2 = self.box.xmin + self.box.width
+        y1 = self.box.ymin
+        y2 = self.box.ymin + self.box.height
+
+        shift_y = (y2 - y1) // 2
+        margin_w, margin_h = (x2 - x1) * 4 // 5, (y2 - y1) * 4 // 5
+
+        self.image = self.image[
+            max(y1 - margin_h - shift_y, 0) : y2 + margin_h - shift_y,
+            max(x1 - margin_w, 0) : x2 + margin_w,
+        ]
+
+        wrist_center, middle_finger = self.box.keypoints[0], self.box.keypoints[2]
+        angle = (
+            math.atan(
+                (middle_finger[0] - wrist_center[0])
+                / (wrist_center[1] - middle_finger[1])
+            )
+            * 57.3
+        )
+        rot_mat = cv2.getRotationMatrix2D(
+            (self.image.shape[0] / 2, self.image.shape[1] / 2), angle, 1
+        )
+        image = cv2.warpAffine(
+            self.image, rot_mat, (self.image.shape[1], self.image.shape[0])
+        )
+        translation_mat = util.get_translation_mat(
+            x1 - margin_w, y1 - margin_h - shift_y
+        )
+        rotation_mat = cv2.getRotationMatrix2D(
+            (image.shape[0] / 2, image.shape[1] / 2), -angle, 1
+        )
+        # convert to homogeneous coordinates
+        rotation_mat = np.vstack([rotation_mat, [0, 0, 1]])
+        return PalmROI(image, translation_mat @ rotation_mat)
