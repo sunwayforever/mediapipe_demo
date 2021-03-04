@@ -13,3 +13,14 @@ Run
 ---
 
 ./launcher.sh
+
+Note
+---
+flops:
+
+face detection:       52M
+face landmark:        56M
+iris landmark:        98M
+palm detection:       198M
+hand landmark:        710M
+face recognition:     2700M

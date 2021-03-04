@@ -67,7 +67,6 @@ class Backend(QObject):
         self.facenetImageChanged.emit(enrolled)
 
     def update_hand_gesture(self, image):
-        # NEXT: hand gesture
         self.hand_image_provider.set_image(image)
         self.handImageChanged.emit()
 
