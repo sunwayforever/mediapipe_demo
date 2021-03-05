@@ -5,6 +5,7 @@ from cv2 import cv2
 import numpy as np
 import os
 from scipy.spatial import distance
+import tensorflow as tf
 
 
 def get_aspect_ratio(top, bottom, left, right):
@@ -78,3 +79,21 @@ def resize(img, roi_width, roi_height):
         value=(0, 0, 0),
     )
     return img, v_padding / roi_width, h_padding / roi_height
+
+
+def config_gpu_memory(gpu_mem_cap):
+    gpus = tf.config.experimental.list_physical_devices("GPU")
+    if not gpus:
+        return
+    for gpu in gpus:
+        try:
+            tf.config.experimental.set_virtual_device_configuration(
+                gpu,
+                [
+                    tf.config.experimental.VirtualDeviceConfiguration(
+                        memory_limit=gpu_mem_cap
+                    )
+                ],
+            )
+        except RuntimeError as e:
+            print("Can not set GPU memory config", e)

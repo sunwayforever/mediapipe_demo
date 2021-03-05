@@ -29,7 +29,9 @@ class FaceLandmarkDetector(object):
         else:
             self.model = keras.models.load_model(
                 util.get_resource("../model/face_landmark")
-            ).signatures["serving_default"]
+            ).signatures[  # type: ignore
+                "serving_default"
+            ]
 
     def __call__(self, topic, data):
         if topic == b"face_roi":

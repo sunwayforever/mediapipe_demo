@@ -25,7 +25,9 @@ class IrisLandmarkDetector(object):
         else:
             self.model = keras.models.load_model(
                 util.get_resource("../model/iris_landmark")
-            ).signatures["serving_default"]
+            ).signatures[  # type: ignore
+                "serving_default"
+            ]
 
     def __call__(self, topic, data):
         if topic == b"iris_roi":

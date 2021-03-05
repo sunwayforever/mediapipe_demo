@@ -8,6 +8,8 @@ Prerequisite
 -   pip install opencv-python-headless
 -   pip install pyqt5==5.15.2
 -   pip install tensorflow-gpu==2.2.0
+-   pip install zmq
+-   pip install scipy
 
 Run
 ---

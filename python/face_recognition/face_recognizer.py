@@ -36,7 +36,7 @@ class FaceRecognizer(object):
         self.last_face_image = face_roi.image
         face_image = cv2.resize(face_roi.image, (IMG_WIDTH, IMG_HEIGHT))
         face_image = np.expand_dims(face_image, axis=0)
-        embedding = self.model(face_image).numpy().ravel()
+        embedding = self.model(face_image).numpy().ravel()  # type: ignore
         self.last_face_embedding = embedding
 
         # ZMQ_PUB: facenet

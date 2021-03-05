@@ -4,6 +4,9 @@
 from .config import *
 from .face_detector import FaceDetector
 from message_broker.transport import Subscriber
+import util
+
+util.config_gpu_memory(10)
 
 if __name__ == "__main__":
     Subscriber().sub([b"image"], FaceDetector()).loop()
