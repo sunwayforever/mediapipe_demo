@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-22 16:00
-from PyQt5.QtGui import QGuiApplication, QImage
-from PyQt5.QtQml import QQmlApplicationEngine
-from PyQt5.QtCore import QRunnable, QThreadPool, Qt, pyqtSignal, QObject
-import cv2
-import random
+from cv2 import cv2
 
 from hand_landmark.hand_points import *
 from face_landmark.face_points import *
 from iris_landmark.iris_points import *
 
 
-class WebcamDisplayCallback(object):
+class WebcamDisplay(object):
     def __init__(self, backend):
         self.face_box = None
         self.image = None

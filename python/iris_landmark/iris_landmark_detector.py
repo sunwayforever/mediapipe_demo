@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import cv2
+from cv2 import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -8,7 +8,7 @@ from tensorflow import keras
 from .config import *
 from .iris_points import *
 from .eye_estimator import EyeEstimator
-from message_broker.transport import Publisher, Subscriber
+from message_broker.transport import Publisher
 import util
 
 

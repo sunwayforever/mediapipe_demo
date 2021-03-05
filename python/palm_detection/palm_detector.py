@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import math
-import cv2
+from cv2 import cv2
 import numpy as np
 from collections import namedtuple
 
@@ -29,7 +29,7 @@ class PalmDetector(object):
         self.publisher = Publisher()
         self.box_detector = BoxDetector(palm_box_config)
         self.image = None
-        self.box = None
+        self.box = None  # BoxDetector.Box
 
     def __call__(self, topic, data):
         if topic == b"image":
@@ -71,9 +71,8 @@ class PalmDetector(object):
 
         wrist_center, middle_finger = self.box.keypoints[0], self.box.keypoints[2]
         angle = (
-            math.atan(
-                (middle_finger[0] - wrist_center[0])
-                / (wrist_center[1] - middle_finger[1])
+            math.atan2(
+                middle_finger[0] - wrist_center[0], wrist_center[1] - middle_finger[1]
             )
             * 57.3
         )

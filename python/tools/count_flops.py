@@ -3,17 +3,21 @@
 # 2021-02-19 12:51
 
 import os
-import sys
 import numpy as np
 import json
 import tensorflow as tf
+import argparse
 
-schema = "../model/schema.fbs"
-binary = os.path.expanduser(
+parser = argparse.ArgumentParser()
+parser.add_argument("tflite", type=str)
+FLAGS = parser.parse_args()
+
+schema = "../../model/schema.fbs"
+flatc = os.path.expanduser(
     "~/source/tensorflow/bazel-out/host/bin/external/flatbuffers/flatc"
 )
 
-model_path = sys.argv[1]
+model_path = FLAGS.tflite
 model_name = os.path.basename(model_path).replace(".tflite", "")
 model_json_path = f"/tmp/{model_name}.json"
 
@@ -21,10 +25,7 @@ model_json_path = f"/tmp/{model_name}.json"
 def gen_model_json():
     if not os.path.exists(model_json_path):
         cmd = (
-            binary
-            + " -t --strict-json --defaults-json -o /tmp {schema} -- {input}".format(
-                input=model_path, schema=schema
-            )
+            f"{flatc} -t --strict-json --defaults-json -o /tmp {schema} -- {model_path}"
         )
         print("output json command =", cmd)
         os.system(cmd)
@@ -40,7 +41,7 @@ def parse_json():
 def make_graph(ops, op_types, interpreter):
     flops = 0
     ignored_op = {}
-    for index, op in enumerate(ops):
+    for op in ops:
         op_type = op_types[op["opcode_index"]]
         if op_type == "CONV_2D":
             # - input 为 [1, x1, y1, c]
@@ -81,7 +82,7 @@ def make_graph(ops, op_types, interpreter):
             input_shape = interpreter._get_tensor_details(op["inputs"][0])["shape"]
             flops += np.prod(input_shape)
         elif op_type == "FULLY_CONNECTED":
-            weight_shape = interpreter._get_tensor_details(op["inputs"][1])["shape"]
+            input_shape = interpreter._get_tensor_details(op["inputs"][1])["shape"]
             flops += np.prod(input_shape) * 2
         else:
             if op_type not in ignored_op:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import math
-import cv2
+from cv2 import cv2
 import numpy as np
 from collections import namedtuple
 
@@ -29,7 +29,7 @@ class FaceDetector(object):
         self.publisher = Publisher()
         self.box_detector = BoxDetector(face_box_config)
         self.image = None
-        self.box = None
+        self.box = None  # type BoxDetector.Box
 
     def __call__(self, topic, data):
         if topic == b"image":
@@ -67,8 +67,7 @@ class FaceDetector(object):
 
         left_eye, right_eye = self.box.keypoints[0], self.box.keypoints[1]
         angle = (
-            math.atan((right_eye[1] - left_eye[1]) / (right_eye[0] - left_eye[0]))
-            * 57.3
+            math.atan2(right_eye[1] - left_eye[1], right_eye[0] - left_eye[0]) * 57.3
         )
         rot_mat = cv2.getRotationMatrix2D(
             (self.image.shape[0] / 2, self.image.shape[1] / 2), angle, 1

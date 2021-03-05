@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import cv2
-import time
-import math
-import argparse
+from cv2 import cv2
 import numpy as np
 import tensorflow as tf
-import time
-import sys
-import os
-import zmq
-import pickle
 
 from tensorflow import keras
-from tensorflow.keras import layers, losses, metrics, models
 
 from .config import *
 from .hand_gesture_estimator import HandGestureEstimator
-from message_broker.transport import Publisher, Subscriber
+from message_broker.transport import Publisher
 import util
 
 
@@ -27,7 +18,9 @@ class HandLandmarkDetector(object):
         self.gesture_estimator = HandGestureEstimator()
         self.model = keras.models.load_model(
             util.get_resource("../model/hand_landmark")
-        ).signatures["serving_default"]
+        ).signatures[  # type:ignore
+            "serving_default"
+        ]
 
     def __call__(self, topic, data):
         if topic == b"palm_roi":

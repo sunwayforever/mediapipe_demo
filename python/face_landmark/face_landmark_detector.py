@@ -1,26 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import cv2
-import time
-import math
-import argparse
+from cv2 import cv2
 import numpy as np
 import tensorflow as tf
-import time
-import sys
-import os
-import zmq
-import pickle
-
 from tensorflow import keras
-from tensorflow.keras import layers, losses, metrics, models
 
 from .config import *
 from .face_points import *
 from .pose_estimator import PoseEstimator
 from .mouth_estimator import MouthEstimator
 from .iris_cropper import IrisCropper
-from message_broker.transport import Publisher, Subscriber
+from message_broker.transport import Publisher
 import util
 
 

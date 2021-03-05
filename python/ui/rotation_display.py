@@ -3,7 +3,7 @@
 # 2021-02-24 10:10
 
 
-class RotationDisplayCallback(object):
+class RotationDisplay(object):
     def __init__(self, backend):
         self.rotation = None
         self.backend = backend

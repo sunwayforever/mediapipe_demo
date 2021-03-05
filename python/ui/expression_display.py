@@ -3,7 +3,7 @@
 # 2021-02-24 10:10
 
 
-class ExpressionDisplayCallback(object):
+class ExpressionDisplay(object):
     def __init__(self, backend):
         self.mouth_aspect_ratio = 0
         self.eye_aspect_ratios = [0, 0]

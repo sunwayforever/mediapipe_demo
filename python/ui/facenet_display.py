@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-24 10:10
-import cv2
+from cv2 import cv2
 
 import util
 
 
-class FacenetDisplayCallback(object):
+class FacenetDisplay(object):
     def __init__(self, backend):
         self.backend = backend
         self.image = None

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-26 18:16
-import cv2
+from cv2 import cv2
 import numpy as np
 
 from .inception_resnet_v1 import InceptionResNetV1

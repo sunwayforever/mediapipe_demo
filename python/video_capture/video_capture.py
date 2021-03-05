@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-20 12:41
-import cv2
+from cv2 import cv2
+import numpy as np
 
 
 class WebCamVideoCapture(object):

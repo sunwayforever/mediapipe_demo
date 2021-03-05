@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-20 12:41
-import cv2
 import math
-import argparse
 import numpy as np
 import tensorflow as tf
-import sys
-import os
 from tensorflow import keras
 from collections import namedtuple
 
@@ -66,7 +62,9 @@ class BoxDetector(object):
             self.use_tflite = False
             self.model = keras.models.load_model(
                 util.get_resource(self.config.model)
-            ).signatures["serving_default"]
+            ).signatures[  # type:ignore
+                "serving_default"
+            ]
 
     def detect(self, img):
         self.img_width = img.shape[1]
@@ -151,7 +149,7 @@ class BoxDetector(object):
 
             for y in range(feature_map_height):
                 for x in range(feature_map_width):
-                    for anchor_id in range(2 * count):
+                    for _ in range(2 * count):
                         x_center = (x + 0.5) / feature_map_width
                         y_center = (y + 0.5) / feature_map_height
                         w = 1.0

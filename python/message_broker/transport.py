@@ -32,7 +32,7 @@ class Subscriber(object):
 
     def sub(self, topics, callback):
         if self.callback is not None:
-            raise ("mulptiple `sub` invoked")
+            raise Exception("mulptiple `sub` invoked")
         if isinstance(topics, bytes):
             topics = [topics]
         for topic in topics:

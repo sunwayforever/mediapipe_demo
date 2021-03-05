@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2020-12-22 14:58
-import cv2
-import argparse
+from cv2 import cv2
 import numpy as np
-import time
 import os
-from collections import defaultdict
 from scipy.spatial import distance
 
 
@@ -20,9 +17,9 @@ def get_scale_mat(x, y):
     return np.array([[x, 0, 0], [0, y, 0], [0, 0, 1]])
 
 
-def restore_coordinates(surface, mat):
+def restore_coordinates(surface: np.ndarray, mat) -> np.ndarray:
     # mat: 3x3 homogeneous
-    tmp_surface = surface[:, :2]
+    tmp_surface: np.ndarray = surface[:, :2]
     tmp_surface = np.concatenate(
         (tmp_surface, np.ones((tmp_surface.shape[0], 1))), axis=1
     )
