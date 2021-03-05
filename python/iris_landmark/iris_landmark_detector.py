@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 from cv2 import cv2
 import numpy as np
-import tensorflow as tf
-from tensorflow import keras
 
 from .config import *
 from .iris_points import *
@@ -16,13 +14,25 @@ class IrisLandmarkDetector(object):
     def __init__(self):
         self.publisher = Publisher()
         self.eye_estimator = EyeEstimator()
-        if NN == "tflite":
-            model_path = util.get_resource("../model/iris_landmark.tflite")
+        self.nn = ""
+        if MODEL.endswith(".tflite"):
+            import tensorflow as tf
+
+            self.nn = "tflite"
+            model_path = util.get_resource(MODEL)
             self.interpreter = tf.lite.Interpreter(model_path=model_path)
             self.interpreter.allocate_tensors()
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
+        elif MODEL.endswith(".onnx"):
+            import onnxruntime as onnx
+
+            self.nn = "onnx"
+            self.onnx = onnx.InferenceSession(util.get_resource(MODEL))
         else:
+            import tensorflow as tf
+            from tensorflow import keras
+
             self.model = keras.models.load_model(
                 util.get_resource("../model/iris_landmark")
             ).signatures[  # type: ignore
@@ -51,13 +61,7 @@ class IrisLandmarkDetector(object):
             input_data = input_data / 255.0
             input_data = np.expand_dims(input_data, axis=0)
 
-            if NN == "tf":
-                output = self.model(tf.convert_to_tensor(input_data))
-                eye_surface, iris_surface = (
-                    output["output_eyes_contours_and_brows"],
-                    output["output_iris"],
-                )
-            else:
+            if self.nn == "tflite":
                 self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
                 self.interpreter.invoke()
                 eye_surface = self.interpreter.get_tensor(
@@ -65,6 +69,17 @@ class IrisLandmarkDetector(object):
                 )
                 iris_surface = self.interpreter.get_tensor(
                     self.output_details[1]["index"]
+                )
+            elif self.nn == "onnx":
+                eye_surface, iris_surface = self.onnx.run(
+                    ["output_eyes_contours_and_brows", "output_iris"],
+                    {"input_1": np.transpose(input_data, (0, 3, 1, 2))},
+                )
+            else:
+                output = self.model(tf.convert_to_tensor(input_data))
+                eye_surface, iris_surface = (
+                    output["output_eyes_contours_and_brows"],
+                    output["output_iris"],
                 )
 
             eye_surface, iris_surface = (

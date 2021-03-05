@@ -17,7 +17,7 @@ FaceROI = namedtuple("FaceROI", ["image", "mat"])
 class FaceDetector(object):
     def __init__(self):
         face_box_config = BoxConfig(
-            FACE_MODEL,
+            MODEL,
             IMG_HEIGHT,
             IMG_WIDTH,
             NUM_COORDS,

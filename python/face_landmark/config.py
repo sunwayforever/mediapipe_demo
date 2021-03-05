@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # 2021-02-22 18:27
 
-NN = "tf"  # tflite or tf
+MODEL = "../model/face_landmark_quant.onnx"
+# MODEL = "../model/face_landmark"
 
 IMG_WIDTH = 192
 IMG_HEIGHT = 192

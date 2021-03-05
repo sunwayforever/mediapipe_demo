@@ -3,8 +3,7 @@
 # 2021-02-20 12:41
 import math
 import numpy as np
-import tensorflow as tf
-from tensorflow import keras
+
 from collections import namedtuple
 
 import util
@@ -50,16 +49,26 @@ class BoxDetector(object):
         self.config = config
         self.anchors = self._gen_anchors()
         self.publisher = Publisher()
+        self.nn = ""
         if self.config.model.endswith(".tflite"):
-            self.use_tflite = True
+            import tensorflow as tf
+
+            self.nn = "tflite"
             self.interpreter = tf.lite.Interpreter(
                 model_path=util.get_resource(self.config.model)
             )
             self.interpreter.allocate_tensors()
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
+        elif self.config.model.endswith(".onnx"):
+            import onnxruntime as onnx
+
+            self.nn = "onnx"
+            self.onnx = onnx.InferenceSession(util.get_resource(self.config.model))
         else:
-            self.use_tflite = False
+            import tensorflow as tf
+            from tensorflow import keras
+
             self.model = keras.models.load_model(
                 util.get_resource(self.config.model)
             ).signatures[  # type:ignore
@@ -78,12 +87,17 @@ class BoxDetector(object):
         input_data = np.expand_dims(input_data, axis=0)
         input_data = input_data.astype(np.float32)
 
-        if self.use_tflite:
+        if self.nn == "tflite":
             self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
             self.interpreter.invoke()
             regressors = self.interpreter.get_tensor(self.output_details[0]["index"])
             classificators = self.interpreter.get_tensor(
                 self.output_details[1]["index"]
+            )
+        elif self.nn == "onnx":
+            regressors, classificators = self.onnx.run(
+                ["regressors", "classificators"],
+                {"input": np.transpose(input_data, (0, 3, 1, 2))},
             )
         else:
             output = self.model(tf.convert_to_tensor(input_data))
