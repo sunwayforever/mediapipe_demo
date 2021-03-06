@@ -66,7 +66,7 @@ class FaceLandmarkDetector(object):
             prob = self.interpreter.get_tensor(self.output_details[1]["index"])
         elif self.nn == "onnx":
             surface, prob = self.onnx.run(
-                ["conv2d_20", "conv2d_30"],
+                ["conv2d_21", "conv2d_31"],
                 {"input_1": np.transpose(input_data, (0, 3, 1, 2))},
             )
         else:
