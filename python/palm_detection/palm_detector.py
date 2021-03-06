@@ -17,7 +17,7 @@ PalmROI = namedtuple("PalmROI", ["image", "mat"])
 class PalmDetector(object):
     def __init__(self):
         palm_box_config = BoxConfig(
-            PALM_MODEL,
+            MODEL,
             IMG_HEIGHT,
             IMG_WIDTH,
             NUM_COORDS,

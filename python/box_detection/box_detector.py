@@ -3,6 +3,9 @@
 # 2021-02-20 12:41
 import math
 import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+import onnxruntime as onnx
 
 from collections import namedtuple
 
@@ -51,8 +54,6 @@ class BoxDetector(object):
         self.publisher = Publisher()
         self.nn = ""
         if self.config.model.endswith(".tflite"):
-            import tensorflow as tf
-
             self.nn = "tflite"
             self.interpreter = tf.lite.Interpreter(
                 model_path=util.get_resource(self.config.model)
@@ -61,14 +62,9 @@ class BoxDetector(object):
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
         elif self.config.model.endswith(".onnx"):
-            import onnxruntime as onnx
-
             self.nn = "onnx"
             self.onnx = onnx.InferenceSession(util.get_resource(self.config.model))
         else:
-            import tensorflow as tf
-            from tensorflow import keras
-
             self.model = keras.models.load_model(
                 util.get_resource(self.config.model)
             ).signatures[  # type:ignore
@@ -100,8 +96,10 @@ class BoxDetector(object):
                 {"input": np.transpose(input_data, (0, 3, 1, 2))},
             )
         else:
-            output = self.model(tf.convert_to_tensor(input_data))
-            regressors, classificators = output["regressors"], output["classificators"]
+            output = self.model(
+                tf.convert_to_tensor(np.transpose(input_data, (0, 3, 1, 2)))
+            )
+            regressors, classificators = output["output_0"], output["output_1"]
 
         boxes = self._post_detect(regressors, classificators)
 
