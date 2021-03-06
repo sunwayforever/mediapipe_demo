@@ -3,6 +3,7 @@
 # 2021-02-20 12:17
 # MODEL = "../model/face_detection_front.onnx"
 MODEL = "../model/face_detection_front"
+
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
 NUM_COORDS = 16

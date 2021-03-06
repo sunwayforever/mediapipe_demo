@@ -9,19 +9,11 @@ Prerequisite
 -   pip install pyqt5==5.15.2
 -   pip install zmq
 -   pip install scipy
-
-for tensorflow
---------------
-
--   conda install cudnn==7.6.5
--   pip install tensorflow-gpu==2.2.0
-
-for onnx
---------
-
--   conda install cudnn==8.0.4
+-   conda install cudnn==8.0.4 -c nvidia
+-   conda install cudatoolkit==11.1.74 -c nvidia
 -   pip install onnxruntime-gpu==1.7.0
 -   pip install onnx==1.8.1
+-   pip install tensorflow==2.4.0
 
 Run
 ---

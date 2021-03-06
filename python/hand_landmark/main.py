@@ -5,7 +5,7 @@ from .hand_landmark_detector import HandLandmarkDetector
 from message_broker.transport import Subscriber
 import util
 
-util.config_gpu_memory(50)
+util.config_gpu_memory(30)
 
 if __name__ == "__main__":
     # ZMQ_SUB: palm_roi

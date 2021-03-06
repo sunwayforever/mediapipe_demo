@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-03-02 12:24
+# MODEL = "../model/palm_detection.onnx"
 MODEL = "../model/palm_detection"
 
 IMG_HEIGHT, IMG_WIDTH = 128, 128

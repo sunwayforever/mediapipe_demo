@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 from cv2 import cv2
 import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+import onnxruntime as onnx
 
 from .config import *
 from .face_points import *
@@ -20,8 +23,6 @@ class FaceLandmarkDetector(object):
         self.iris_cropper = IrisCropper()
         self.nn = ""
         if MODEL.endswith(".tflite"):
-            import tensorflow as tf
-
             self.nn = "tflite"
             model_path = util.get_resource(MODEL)
             self.interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -29,14 +30,9 @@ class FaceLandmarkDetector(object):
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
         elif MODEL.endswith(".onnx"):
-            import onnxruntime as onnx
-
             self.nn = "onnx"
             self.onnx = onnx.InferenceSession(util.get_resource(MODEL))
         else:
-            import tensorflow as tf
-            from tensorflow import keras
-
             self.model = keras.models.load_model(
                 util.get_resource("../model/face_landmark")
             ).signatures[  # type: ignore
@@ -70,8 +66,10 @@ class FaceLandmarkDetector(object):
                 {"input_1": np.transpose(input_data, (0, 3, 1, 2))},
             )
         else:
-            output = self.model(tf.convert_to_tensor(input_data))
-            surface, prob = output["conv2d_20"], output["conv2d_30"]
+            output = self.model(
+                tf.convert_to_tensor(np.transpose(input_data, (0, 3, 1, 2)))
+            )
+            surface, prob = output["output_0"], output["output_1"]
 
         surface, prob = np.reshape(surface, (-1, 3)), np.squeeze(prob)
         surface = np.array(surface)
