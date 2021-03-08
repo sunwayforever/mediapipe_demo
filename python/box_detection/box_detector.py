@@ -48,7 +48,7 @@ class Box:
 
 
 class BoxDetector(object):
-    def __init__(self, config):
+    def __init__(self, config: BoxConfig):
         self.config = config
         self.anchors = self._gen_anchors()
         self.publisher = Publisher()

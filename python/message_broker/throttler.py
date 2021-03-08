@@ -34,7 +34,7 @@ class Throttler(object):
 
         self.next_time = {}
 
-    def check(self, topic):
+    def is_send_allowed(self, topic):
         current = round(time.time() * 1000)
         next = self.next_time.get(topic, current)
         if current < next:
@@ -43,3 +43,7 @@ class Throttler(object):
             raise (Exception("unknown topic:", topic))
         self.next_time[topic] = current + 1000 // self.throttle[topic]
         return True
+
+    def is_recv_allowed(self, topic, time_stamp):
+        current = round(time.time() * 1000)
+        return current - time_stamp < 1000 // self.throttle[topic]

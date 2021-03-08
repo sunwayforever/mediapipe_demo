@@ -5,7 +5,8 @@
 from .transport import *
 from .config import *
 
-if __name__ == "__main__":
+
+def run():
     ctx = zmq.Context()
     sub_sock = ctx.socket(zmq.SUB)
     sub_sock.bind(f"tcp://127.0.0.1:{INPUT_PORT}")
@@ -16,3 +17,7 @@ if __name__ == "__main__":
 
     while True:
         pub_sock.send_multipart(sub_sock.recv_multipart())
+
+
+if __name__ == "__main__":
+    run()

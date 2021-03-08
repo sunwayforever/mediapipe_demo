@@ -3,6 +3,8 @@
 # 2021-02-23 11:19
 import zmq
 import pickle
+import time
+import struct
 from PyQt5.QtCore import QRunnable, QThreadPool
 
 from .throttler import Throttler
@@ -17,14 +19,17 @@ class Publisher(object):
         self.sock.connect(f"tcp://127.0.0.1:{INPUT_PORT}")
 
     def pub(self, topic, data=None):
-        if self.throttler.check(topic):
+        if self.throttler.is_send_allowed(topic):
             if DEBUG:
                 print("pub: ", topic)
-            self.sock.send_multipart([topic, pickle.dumps(data)])
+            self.sock.send_multipart(
+                [topic, struct.pack("<Q", int(time.time() * 1000)), pickle.dumps(data)]
+            )
 
 
 class Subscriber(object):
     def __init__(self):
+        self.throttler = Throttler()
         self.ctx = zmq.Context()
         self.sock = self.ctx.socket(zmq.SUB)
         self.sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
@@ -42,8 +47,13 @@ class Subscriber(object):
 
     def _recv(self):
         raw_data = self.sock.recv_multipart()
-        topic, data = raw_data[0], pickle.loads(raw_data[1])
-        self.callback(topic, data)
+        topic, time, data = (
+            raw_data[0],
+            struct.unpack("<Q", raw_data[1])[0],
+            pickle.loads(raw_data[2]),
+        )
+        if self.throttler.is_recv_allowed(topic, time):
+            self.callback(topic, data)
 
     def loop(self):
         while True:
@@ -52,11 +62,12 @@ class Subscriber(object):
 
 class PolledSubscriber(object):
     def __init__(self):
+        self.throttler = Throttler()
         self.poller = zmq.Poller()
         self.ctx = zmq.Context()
         self.callbacks = {}
 
-    def sub(self, topic, callback):
+    def sub(self, topics, callback):
         sock = self.ctx.socket(zmq.SUB)
         sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
         for topic in topics:
@@ -66,11 +77,12 @@ class PolledSubscriber(object):
         return self
 
     def _recv(self):
-        ready_socks = dict(poller.poll())
+        ready_socks = dict(self.poller.poll())
         for sock in ready_socks.keys():
             raw_data = sock.recv_multipart()
-            topic, data = raw_data[0], pickle.loads(raw_data[1])
-            self.callbacks[sock](topic, data)
+            topic, time, data = raw_data[0], raw_data[1], pickle.loads(raw_data[2])
+            if self.throttler.is_recv_allowed(topic, time):
+                self.callbacks[sock](topic, data)
 
     def loop(self):
         while True:

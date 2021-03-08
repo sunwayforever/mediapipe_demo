@@ -4,6 +4,11 @@
 from .face_recognizer import FaceRecognizer
 from message_broker.transport import Subscriber
 
-if __name__ == "__main__":
+
+def run():
     # ZMQ_SUB: face_roi_slow, enroll
     Subscriber().sub([b"face_roi_slow", b"enroll"], FaceRecognizer()).loop()
+
+
+if __name__ == "__main__":
+    run()

@@ -4,9 +4,11 @@
 from .config import *
 from .palm_detector import PalmDetector
 from message_broker.transport import Subscriber
-import util
 
-util.config_gpu_memory(10)
+
+def run():
+    Subscriber().sub([b"image"], PalmDetector()).loop()
+
 
 if __name__ == "__main__":
-    Subscriber().sub([b"image"], PalmDetector()).loop()
+    run()

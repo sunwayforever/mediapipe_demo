@@ -14,7 +14,7 @@ from .hand_gesture_display import HandGestureDisplay
 from .backend import *
 
 
-if __name__ == "__main__":
+def run():
     backend = Backend()
 
     subscriber = QThreadedSubscriber()
@@ -60,3 +60,7 @@ if __name__ == "__main__":
     engine.load("ui/main.qml")
 
     exit(app.exec_())
+
+
+if __name__ == "__main__":
+    run()

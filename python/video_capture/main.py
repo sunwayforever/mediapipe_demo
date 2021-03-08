@@ -4,9 +4,14 @@
 from .video_capture import WebCamVideoCapture, InuVideoCapture
 from message_broker.transport import Publisher
 
-if __name__ == "__main__":
+
+def run():
     vc = WebCamVideoCapture()
     publisher = Publisher()
     while True:
         # ZMQ_PUB: image
         publisher.pub(b"image", vc.capture())
+
+
+if __name__ == "__main__":
+    run()

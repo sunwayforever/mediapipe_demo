@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-03-05 22:01
-import onnx
 from onnxruntime.quantization import quantize_dynamic
 import argparse
 
