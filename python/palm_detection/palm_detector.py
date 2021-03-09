@@ -3,15 +3,12 @@
 import math
 from cv2 import cv2
 import numpy as np
-from collections import namedtuple
 
 from .config import *
 from message_broker.transport import Publisher
 from box_detection.box_detector import BoxDetector, BoxConfig
 
 import util
-
-PalmROI = namedtuple("PalmROI", ["image", "mat"])
 
 
 class PalmDetector(object):
@@ -90,4 +87,4 @@ class PalmDetector(object):
         )
         # convert to homogeneous coordinates
         rotation_mat = np.vstack([rotation_mat, [0, 0, 1]])
-        return PalmROI(image, translation_mat @ rotation_mat)
+        return util.ROIImage(image, translation_mat @ rotation_mat)

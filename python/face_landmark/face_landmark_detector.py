@@ -21,6 +21,9 @@ class FaceLandmarkDetector(object):
         self.pose_estimator = PoseEstimator()
         self.mouth_estimator = MouthEstimator()
         self.iris_cropper = IrisCropper()
+        self.point_velocity_filters = [
+            util.PointVelocityFilter() for _ in range(N_FACE_POINTS)
+        ]
         self.nn = ""
         if MODEL.endswith(".tflite"):
             self.nn = "tflite"
@@ -81,8 +84,13 @@ class FaceLandmarkDetector(object):
         self.publisher.pub(b"iris_roi", self.iris_cropper.crop(face_img, surface, mat))
 
         surface = util.restore_coordinates(surface, mat)
+        surface = surface.astype("float32")
+        # filter
+        for filter, point in zip(self.point_velocity_filters, surface):
+            point[:2] = filter.update(point[:2])
+
         # ZMQ_PUB: face_landmark
-        self.publisher.pub(b"face_landmark", surface.astype("float32"))
+        self.publisher.pub(b"face_landmark", surface)
         # ZMQ_PUB: rotation
         self.publisher.pub(
             b"rotation", self.pose_estimator.estimate(surface[pose_points, :2])
