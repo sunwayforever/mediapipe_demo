@@ -1,4 +1,4 @@
-name: '240'
+name: cuda-11
 channels:
   - pytorch
   - nvidia

@@ -70,6 +70,8 @@ class PolledSubscriber(object):
     def sub(self, topics, callback):
         sock = self.ctx.socket(zmq.SUB)
         sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
+        if isinstance(topics, bytes):
+            topics = [topics]
         for topic in topics:
             sock.subscribe(topic)
         self.poller.register(sock, zmq.POLLIN)
@@ -80,7 +82,11 @@ class PolledSubscriber(object):
         ready_socks = dict(self.poller.poll())
         for sock in ready_socks.keys():
             raw_data = sock.recv_multipart()
-            topic, time, data = raw_data[0], raw_data[1], pickle.loads(raw_data[2])
+            topic, time, data = (
+                raw_data[0],
+                struct.unpack("<Q", raw_data[1])[0],
+                pickle.loads(raw_data[2]),
+            )
             if self.throttler.is_recv_allowed(topic, time):
                 self.callbacks[sock](topic, data)
 

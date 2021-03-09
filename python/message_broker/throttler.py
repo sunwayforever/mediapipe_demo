@@ -45,5 +45,7 @@ class Throttler(object):
         return True
 
     def is_recv_allowed(self, topic, time_stamp):
+        if topic not in self.throttle:
+            raise (Exception("unknown topic:", topic))
         current = round(time.time() * 1000)
         return current - time_stamp < 1000 // self.throttle[topic]

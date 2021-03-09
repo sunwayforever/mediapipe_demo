@@ -19,9 +19,9 @@ class HandGestureEstimator(object):
     def estimate(self, mark):
         finger_state = ["x"] * 5
 
-        if mark[2][0] > mark[3][0] and mark[3][0] > mark[4][0]:
+        if mark[3][0] > mark[4][0]:
             finger_state[0] = "|"
-        elif mark[2][0] < mark[3][0] and mark[3][0] < mark[4][0]:
+        elif mark[3][0] < mark[4][0]:
             finger_state[0] = "."
 
         for i, j in zip(range(1, 5), [6, 10, 14, 18]):
