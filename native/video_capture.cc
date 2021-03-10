@@ -20,7 +20,7 @@ bool VideoCapture::init() {
 
     this->sensor = CInuSensorExt::Create();
     prm.SensorRes = eBinning;
-    prm.FPS = 60;
+    prm.FPS = 30;
 
     while (err != eOK && init_tries < 10) {
         err = this->sensor->Init(channels, prm);

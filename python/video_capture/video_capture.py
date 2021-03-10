@@ -4,6 +4,11 @@
 from cv2 import cv2
 import numpy as np
 
+from .config import *
+
+if DEVICE == "inu":
+    import inu_stream  # type: ignore
+
 
 class WebCamVideoCapture(object):
     def __init__(self):
@@ -12,15 +17,15 @@ class WebCamVideoCapture(object):
     def capture(self):
         return cv2.cvtColor(cv2.flip(self.vid.read()[1], 2), cv2.COLOR_BGR2RGB)
 
-
 class InuVideoCapture(object):
     def __init__(self):
-        import inu_stream  # type: ignore
-
         self.height, self.width = inu_stream.shape()
 
     def capture(self):
-        return np.reshape(
-            inu_stream.read_bgr_image(self.height * self.width * 3),  # type: ignore
-            (self.height, self.width, 3),
+        return cv2.cvtColor(
+            np.reshape(
+                inu_stream.read_bgr_image(self.height * self.width * 3),  # type: ignore
+                (self.height, self.width, 3),
+            ),
+            cv2.COLOR_BGR2RGB,
         )
