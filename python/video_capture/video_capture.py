@@ -15,12 +15,12 @@ class WebCamVideoCapture(object):
 
 class InuVideoCapture(object):
     def __init__(self):
-        import inu_stream
+        import inu_stream  # type: ignore
 
         self.height, self.width = inu_stream.shape()
 
     def capture(self):
         return np.reshape(
-            inu_stream.read_bgr_image(self.height * self.width * 3),
+            inu_stream.read_bgr_image(self.height * self.width * 3),  # type: ignore
             (self.height, self.width, 3),
         )

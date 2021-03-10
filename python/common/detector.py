@@ -6,9 +6,6 @@ from tensorflow import keras
 import onnxruntime as onnx
 import numpy as np
 
-from common import util
-
-
 class Detector(object):
     def __init__(self, model, output_fmt):
         if model.endswith(".tflite"):

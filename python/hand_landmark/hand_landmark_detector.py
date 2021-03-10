@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 from cv2 import cv2
 import numpy as np
-import tensorflow as tf
-from tensorflow import keras
-import onnxruntime as onnx
 
 from .config import *
 from .hand_gesture_estimator import HandGestureEstimator
