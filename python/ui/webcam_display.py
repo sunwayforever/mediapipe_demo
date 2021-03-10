@@ -2,14 +2,42 @@
 # -*- coding: utf-8 -*-
 # 2021-02-22 16:00
 from cv2 import cv2
+from collections import defaultdict
+import time
 
 from hand_landmark.hand_points import *
 from face_landmark.face_points import *
 from iris_landmark.iris_points import *
 
 
+class FPS(object):
+    def __init__(self):
+        self.counters = defaultdict(list)
+        self.fps = defaultdict(int)
+        self.N = 10
+
+    def update(self, category):
+        counter = self.counters[category]
+        counter.append(int(time.time() * 1000))
+        if len(counter) < self.N:
+            return
+        self.fps[category] = self.N * 1000 // (counter[-1] - counter[0])
+        counter.pop(0)
+
+    def reset(self, topics):
+        for topic in topics:
+            if topic in self.counters:
+                del self.counters[topic]
+            if topic in self.fps:
+                del self.fps[topic]
+
+    def get(self):
+        return self.fps
+
+
 class WebcamDisplay(object):
     def __init__(self, backend):
+        self.fps = FPS()
         self.face_box = None
         self.image = None
         self.surface = None
@@ -19,11 +47,36 @@ class WebcamDisplay(object):
         self.backend = backend
 
     def annotate_image(self):
+        self.annotate_fps()
         self.annotate_face_bounding_box()
         self.annotate_face_landmark()
         self.annotate_eye_landmark()
         self.annotate_palm_bounding_box()
         self.annotate_hand_landmark()
+
+    def annotate_fps(self):
+        cv2.putText(
+            self.image,
+            "FPS:",
+            (10, 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 0, 0),
+            1,
+            cv2.LINE_AA,
+        )
+
+        for i, (k, v) in enumerate(self.fps.get().items()):
+            cv2.putText(
+                self.image,
+                f"{k}:{v}",
+                (10, 40 + 20 * i),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.4,
+                (255, 0, 0),
+                1,
+                cv2.LINE_AA,
+            )
 
     def annotate_face_landmark(self):
         if self.surface is None:
@@ -147,27 +200,35 @@ class WebcamDisplay(object):
     def __call__(self, topic, data):
         if topic == b"face_box":
             self.face_box = data
+            self.fps.update("face")
 
         if topic == b"face_reset":
             self.reset_face()
+            self.fps.reset(["face", "face_landmark", "iris_landmark"])
 
         if topic == b"palm_reset":
             self.reset_palm()
+            self.fps.reset(["hand", "hand_landmark"])
 
         if topic == b"face_landmark":
             self.surface = data
+            self.fps.update("face_landmark")
 
         if topic == b"image":
             self.image = data
+            self.fps.update("webcam")
 
         if topic == b"eye_landmark":
             self.eye_surfaces = data
+            self.fps.update("iris_landmark")
 
         if topic == b"palm_box":
             self.palm_box = data
+            self.fps.update("hand")
 
         if topic == b"hand_landmark":
             self.hand_surface = data
+            self.fps.update("hand_landmark")
 
         if self.image is None:
             return

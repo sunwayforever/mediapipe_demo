@@ -8,8 +8,7 @@ from .config import *
 from message_broker.transport import Publisher
 from box_detection.box_detector import BoxDetector, BoxConfig
 
-from common import util
-from common.velocity_filter import PointVelocityFilter
+from common import util, PointVelocityFilter
 
 class FaceDetector(object):
     def __init__(self):

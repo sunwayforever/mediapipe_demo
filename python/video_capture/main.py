@@ -14,7 +14,9 @@ def run():
     publisher = Publisher()
     while True:
         # ZMQ_PUB: image
-        publisher.pub(b"image", vc.capture())
+        image = vc.capture()
+        if image is not None:
+            publisher.pub(b"image", image)
 
 
 if __name__ == "__main__":

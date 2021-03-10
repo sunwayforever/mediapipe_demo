@@ -4,10 +4,10 @@ from cv2 import cv2
 import numpy as np
 
 from .config import *
+from .hand_points import *
 from .hand_gesture_estimator import HandGestureEstimator
 from message_broker.transport import Publisher
-from common import util
-from common.detector import Detector
+from common import util, Detector, PointVelocityFilter
 
 
 class HandLandmarkDetector(Detector):
@@ -22,6 +22,9 @@ class HandLandmarkDetector(Detector):
         )
         self.publisher = Publisher()
         self.gesture_estimator = HandGestureEstimator()
+        self.point_velocity_filters = [
+            PointVelocityFilter() for _ in range(N_HAND_POINTS)
+        ]
 
     def __call__(self, topic, data):
         if topic == b"palm_roi":
@@ -46,8 +49,13 @@ class HandLandmarkDetector(Detector):
         if prob < MIN_PROB_THRESH:
             return None
         surface = util.restore_coordinates(surface, mat)
+        surface = surface.astype("float32")
+        # filter
+        for filter, point in zip(self.point_velocity_filters, surface):
+            point[:2] = filter.update(point[:2])
+
         # ZMQ_PUB: hand_landmark
-        self.publisher.pub(b"hand_landmark", surface.astype("float32"))
+        self.publisher.pub(b"hand_landmark", surface)
         # ZMQ_PUB: hand_gesture
         gesture = self.gesture_estimator.estimate(surface)
         self.publisher.pub(b"hand_gesture", gesture)

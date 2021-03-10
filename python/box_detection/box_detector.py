@@ -6,8 +6,7 @@ import numpy as np
 
 from collections import namedtuple
 
-from common import util
-from common.detector import Detector
+from common import util, Detector
 from message_broker.transport import Publisher
 
 BoxConfig = namedtuple(

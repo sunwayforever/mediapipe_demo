@@ -25,11 +25,15 @@ class InuVideoCapture(object):
         self.height, self.width = inu_stream.shape()
 
     def capture(self):
-        # NEXT:
+        # NEXT: it seems image receivers only have little chance to be scheduled
+        # w/o the sleep, maybe the `read_bgr_image` works in a manner of `busy waiting`
         time.sleep(1 / FPS)
+        image = inu_stream.read_bgr_image(self.height * self.width * 3)  # type: ignore
+        if image is None:
+            return None
         return cv2.cvtColor(
             np.reshape(
-                inu_stream.read_bgr_image(self.height * self.width * 3),  # type: ignore
+                image,
                 (self.height, self.width, 3),
             ),
             cv2.COLOR_BGR2RGB,

@@ -9,9 +9,7 @@ from .pose_estimator import PoseEstimator
 from .mouth_estimator import MouthEstimator
 from .iris_cropper import IrisCropper
 from message_broker.transport import Publisher
-from common import util
-from common.detector import Detector
-from common.velocity_filter import PointVelocityFilter
+from common import util, Detector, PointVelocityFilter
 
 
 class FaceLandmarkDetector(Detector):

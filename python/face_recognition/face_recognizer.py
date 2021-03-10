@@ -4,13 +4,11 @@
 from cv2 import cv2
 import numpy as np
 
-from .inception_resnet_v1 import InceptionResNetV1
+# from .inception_resnet_v1 import InceptionResNetV1
 from .config import *
 from .face_database import FaceDatabase
 from message_broker.transport import Publisher
-from common import util
-from common.detector import Detector
-
+from common import util, Detector
 
 class FaceRecognizer(Detector):
     def __init__(self):

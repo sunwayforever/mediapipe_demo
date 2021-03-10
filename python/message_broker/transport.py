@@ -3,8 +3,6 @@
 # 2021-02-23 11:19
 import zmq
 import pickle
-import time
-import struct
 from PyQt5.QtCore import QRunnable, QThreadPool
 
 from .config import *
@@ -16,7 +14,7 @@ class Publisher(object):
         self.throttler = Throttler()
         self.ctx = zmq.Context()
         self.sock = self.ctx.socket(zmq.PUB)
-        self.sock.connect(f"tcp://127.0.0.1:{INPUT_PORT}")
+        self.sock.connect(INBOUND_ADDR)
 
     def pub(self, topic, data=None):
         if self.throttler.is_send_allowed(topic):
@@ -35,7 +33,7 @@ class Subscriber(object):
         for topic in topics:
             sock = self.ctx.socket(zmq.SUB)
             sock.setsockopt(zmq.CONFLATE, 1)
-            sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
+            sock.connect(OUTBOUND_ADDR)
             sock.subscribe(topic)
             self.poller.register(sock, zmq.POLLIN)
             self.callback = callback

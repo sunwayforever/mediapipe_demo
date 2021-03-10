@@ -7,9 +7,7 @@ from .config import *
 from .iris_points import *
 from .eye_estimator import EyeEstimator
 from message_broker.transport import Publisher
-from common import util
-from common.detector import Detector
-
+from common import util, Detector
 
 class IrisLandmarkDetector(Detector):
     def __init__(self):
