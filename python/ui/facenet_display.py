@@ -3,7 +3,7 @@
 # 2021-02-24 10:10
 from cv2 import cv2
 
-import util
+from common import util
 
 
 class FacenetDisplay(object):

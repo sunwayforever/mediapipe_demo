@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # 2020-12-15 21:04
 from .face_points import *
-import util
+from common import util
 
 
 class IrisCropper(object):

@@ -9,7 +9,7 @@ from PyQt5.QtQuick import QQuickImageProvider
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from message_broker.transport import Publisher
-import util
+from common import util
 
 
 class ImageProvider(QQuickImageProvider):

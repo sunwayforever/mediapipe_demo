@@ -5,7 +5,7 @@ import os
 import pickle
 
 from .config import *
-import util
+from common import util
 
 
 class FaceDatabase(object):

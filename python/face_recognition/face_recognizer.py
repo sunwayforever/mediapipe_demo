@@ -8,7 +8,7 @@ from .inception_resnet_v1 import InceptionResNetV1
 from .config import *
 from .face_database import FaceDatabase
 from message_broker.transport import Publisher
-import util
+from common import util
 
 
 class FaceRecognizer(object):

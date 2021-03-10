@@ -9,30 +9,22 @@ import onnxruntime as onnx
 from .config import *
 from .hand_gesture_estimator import HandGestureEstimator
 from message_broker.transport import Publisher
-import util
+from common import util
+from common.detector import Detector
 
 
-class HandLandmarkDetector(object):
+class HandLandmarkDetector(Detector):
     def __init__(self):
+        super().__init__(
+            util.get_resource(MODEL),
+            {
+                "tflite": [0, 1],
+                "onnx": ["Identity", "Identity_1"],
+                "tf": ["output_0", "output_1"],
+            },
+        )
         self.publisher = Publisher()
         self.gesture_estimator = HandGestureEstimator()
-        self.nn = ""
-        if MODEL.endswith(".tflite"):
-            self.nn = "tflite"
-            model_path = util.get_resource(MODEL)
-            self.interpreter = tf.lite.Interpreter(model_path=model_path)
-            self.interpreter.allocate_tensors()
-            self.input_details = self.interpreter.get_input_details()
-            self.output_details = self.interpreter.get_output_details()
-        elif MODEL.endswith(".onnx"):
-            self.nn = "onnx"
-            self.onnx = onnx.InferenceSession(util.get_resource(MODEL))
-        else:
-            self.model = keras.models.load_model(
-                util.get_resource(MODEL)
-            ).signatures[  # type:ignore
-                "serving_default"
-            ]
 
     def __call__(self, topic, data):
         if topic == b"palm_roi":
@@ -50,21 +42,7 @@ class HandLandmarkDetector(object):
         input_data = palm_img.astype(np.float32) / 255.0
         input_data = np.expand_dims(input_data, axis=0)
 
-        if self.nn == "tflite":
-            self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
-            self.interpreter.invoke()
-            surface = self.interpreter.get_tensor(self.output_details[0]["index"])
-            prob = self.interpreter.get_tensor(self.output_details[1]["index"])
-        elif self.nn == "onnx":
-            surface, prob = self.onnx.run(
-                ["Identity", "Identity_1"],
-                {"input_1": np.transpose(input_data, (0, 3, 1, 2))},
-            )
-        else:
-            output = self.model(
-                tf.convert_to_tensor(np.transpose(input_data, (0, 3, 1, 2)))
-            )
-            surface, prob = output["output_0"], output["output_1"]
+        surface, prob = super().invoke(input_data)
 
         surface, prob = np.reshape(surface, (-1, 3)), np.squeeze(prob)
         surface = np.array(surface)

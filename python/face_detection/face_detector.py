@@ -8,13 +8,13 @@ from .config import *
 from message_broker.transport import Publisher
 from box_detection.box_detector import BoxDetector, BoxConfig
 
-import util
-
+from common import util
+from common.velocity_filter import PointVelocityFilter
 
 class FaceDetector(object):
     def __init__(self):
         face_box_config = BoxConfig(
-            MODEL,
+            util.get_resource(MODEL),
             IMG_HEIGHT,
             IMG_WIDTH,
             NUM_COORDS,
@@ -26,7 +26,7 @@ class FaceDetector(object):
         self.publisher = Publisher()
         self.box_detector = BoxDetector(face_box_config)
         self.point_velocity_filters = [
-            util.PointVelocityFilter(cov_measure=0.001) for _ in range(2)
+            PointVelocityFilter(cov_measure=0.001) for _ in range(2)
         ]
 
     def __call__(self, topic, data):

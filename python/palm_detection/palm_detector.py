@@ -8,13 +8,13 @@ from .config import *
 from message_broker.transport import Publisher
 from box_detection.box_detector import BoxDetector, BoxConfig
 
-import util
+from common import util
 
 
 class PalmDetector(object):
     def __init__(self):
         palm_box_config = BoxConfig(
-            MODEL,
+            util.get_resource(MODEL),
             IMG_HEIGHT,
             IMG_WIDTH,
             NUM_COORDS,

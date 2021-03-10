@@ -9,7 +9,8 @@ import onnxruntime as onnx
 
 from collections import namedtuple
 
-import util
+from common import util
+from common.detector import Detector
 from message_broker.transport import Publisher
 
 BoxConfig = namedtuple(
@@ -47,29 +48,19 @@ class Box:
             self.keypoints.append([box[4 + 2 * i], box[4 + 2 * i + 1]])
 
 
-class BoxDetector(object):
+class BoxDetector(Detector):
     def __init__(self, config: BoxConfig):
+        super().__init__(
+            config.model,
+            {
+                "tflite": [0, 1],
+                "onnx": ["regressors", "classificators"],
+                "tf": ["output_0", "output_1"],
+            },
+        )
         self.config = config
         self.anchors = self._gen_anchors()
         self.publisher = Publisher()
-        self.nn = ""
-        if self.config.model.endswith(".tflite"):
-            self.nn = "tflite"
-            self.interpreter = tf.lite.Interpreter(
-                model_path=util.get_resource(self.config.model)
-            )
-            self.interpreter.allocate_tensors()
-            self.input_details = self.interpreter.get_input_details()
-            self.output_details = self.interpreter.get_output_details()
-        elif self.config.model.endswith(".onnx"):
-            self.nn = "onnx"
-            self.onnx = onnx.InferenceSession(util.get_resource(self.config.model))
-        else:
-            self.model = keras.models.load_model(
-                util.get_resource(self.config.model)
-            ).signatures[  # type:ignore
-                "serving_default"
-            ]
 
     def detect(self, img):
         self.img_width = img.shape[1]
@@ -83,23 +74,7 @@ class BoxDetector(object):
         input_data = np.expand_dims(input_data, axis=0)
         input_data = input_data.astype(np.float32)
 
-        if self.nn == "tflite":
-            self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
-            self.interpreter.invoke()
-            regressors = self.interpreter.get_tensor(self.output_details[0]["index"])
-            classificators = self.interpreter.get_tensor(
-                self.output_details[1]["index"]
-            )
-        elif self.nn == "onnx":
-            regressors, classificators = self.onnx.run(
-                ["regressors", "classificators"],
-                {"input": np.transpose(input_data, (0, 3, 1, 2))},
-            )
-        else:
-            output = self.model(
-                tf.convert_to_tensor(np.transpose(input_data, (0, 3, 1, 2)))
-            )
-            regressors, classificators = output["output_0"], output["output_1"]
+        regressors, classificators = super().invoke(input_data)
 
         boxes = self._post_detect(regressors, classificators)
 
