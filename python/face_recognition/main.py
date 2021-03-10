@@ -2,16 +2,12 @@
 # -*- coding: utf-8 -*-
 # 2021-02-26 17:58
 from .face_recognizer import FaceRecognizer
-from message_broker.transport import PolledSubscriber
+from message_broker.transport import Subscriber
 
 
 def run():
     # ZMQ_SUB: face_roi_slow, enroll
-    face_recognizer = FaceRecognizer()
-    subscriber = PolledSubscriber()
-    subscriber.sub(b"face_roi_slow", face_recognizer)
-    subscriber.sub(b"enroll", face_recognizer)
-    subscriber.loop()
+    Subscriber().sub([b"face_roi_slow", b"enroll"], FaceRecognizer()).loop()
 
 
 if __name__ == "__main__":

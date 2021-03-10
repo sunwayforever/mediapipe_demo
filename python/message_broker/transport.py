@@ -7,8 +7,8 @@ import time
 import struct
 from PyQt5.QtCore import QRunnable, QThreadPool
 
-from .throttler import Throttler
 from .config import *
+from .throttler import Throttler
 
 
 class Publisher(object):
@@ -20,75 +20,37 @@ class Publisher(object):
 
     def pub(self, topic, data=None):
         if self.throttler.is_send_allowed(topic):
-            if DEBUG:
-                print("pub: ", topic)
-            self.sock.send_multipart(
-                [topic, struct.pack("<Q", int(time.time() * 1000)), pickle.dumps(data)]
-            )
+            self.sock.send(topic + b":" + pickle.dumps(data))
 
 
 class Subscriber(object):
     def __init__(self):
-        self.throttler = Throttler()
+        self.poller = zmq.Poller()
         self.ctx = zmq.Context()
-        self.sock = self.ctx.socket(zmq.SUB)
-        self.sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
         self.callback = None
 
     def sub(self, topics, callback):
-        if self.callback is not None:
-            raise Exception("mulptiple `sub` invoked")
         if isinstance(topics, bytes):
             topics = [topics]
         for topic in topics:
-            self.sock.subscribe(topic)
-        self.callback = callback
-        return self
-
-    def _recv(self):
-        raw_data = self.sock.recv_multipart()
-        topic, time, data = (
-            raw_data[0],
-            struct.unpack("<Q", raw_data[1])[0],
-            pickle.loads(raw_data[2]),
-        )
-        if self.throttler.is_recv_allowed(topic, time):
-            self.callback(topic, data)
-
-    def loop(self):
-        while True:
-            self._recv()
-
-
-class PolledSubscriber(object):
-    def __init__(self):
-        self.throttler = Throttler()
-        self.poller = zmq.Poller()
-        self.ctx = zmq.Context()
-        self.callbacks = {}
-
-    def sub(self, topics, callback):
-        sock = self.ctx.socket(zmq.SUB)
-        sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
-        if isinstance(topics, bytes):
-            topics = [topics]
-        for topic in topics:
+            sock = self.ctx.socket(zmq.SUB)
+            sock.setsockopt(zmq.CONFLATE, 1)
+            sock.connect(f"tcp://127.0.0.1:{OUTPUT_PORT}")
             sock.subscribe(topic)
-        self.poller.register(sock, zmq.POLLIN)
-        self.callbacks[sock] = callback
+            self.poller.register(sock, zmq.POLLIN)
+            self.callback = callback
         return self
 
     def _recv(self):
         ready_socks = dict(self.poller.poll())
         for sock in ready_socks.keys():
-            raw_data = sock.recv_multipart()
-            topic, time, data = (
-                raw_data[0],
-                struct.unpack("<Q", raw_data[1])[0],
-                pickle.loads(raw_data[2]),
+            raw_data = sock.recv()
+            index = raw_data.index(b":")
+            topic, data = (
+                raw_data[:index],
+                pickle.loads(raw_data[index + 1 :]),
             )
-            if self.throttler.is_recv_allowed(topic, time):
-                self.callbacks[sock](topic, data)
+            self.callback(topic, data)
 
     def loop(self):
         while True:

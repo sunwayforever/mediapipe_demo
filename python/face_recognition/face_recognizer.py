@@ -9,13 +9,15 @@ from .config import *
 from .face_database import FaceDatabase
 from message_broker.transport import Publisher
 from common import util
+from common.detector import Detector
 
 
-class FaceRecognizer(object):
+class FaceRecognizer(Detector):
     def __init__(self):
-        self.model = InceptionResNetV1(
-            weights_path=util.get_resource("../model/facenet-weights.h5")
-        )
+        # self.model = InceptionResNetV1(
+        #     weights_path=util.get_resource("../model/facenet-weights.h5")
+        # )
+        super().__init__(util.get_resource(MODEL), {"onnx": ["Identity:0"]})
         self.face_db = FaceDatabase()
         self.publisher = Publisher()
 
@@ -36,7 +38,10 @@ class FaceRecognizer(object):
         self.last_face_image = face_roi.image
         face_image = cv2.resize(face_roi.image, (IMG_WIDTH, IMG_HEIGHT))
         face_image = np.expand_dims(face_image, axis=0)
-        embedding = self.model(face_image).numpy().ravel()  # type: ignore
+        (embedding,) = super().invoke(
+            np.transpose(face_image.astype(np.float32), (0, 2, 3, 1))
+        )
+        embedding = embedding.ravel()  # type: ignore
         self.last_face_embedding = embedding
 
         # ZMQ_PUB: facenet

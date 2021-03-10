@@ -17,6 +17,7 @@ class Detector(object):
         elif model.endswith(".onnx"):
             self.nn = "onnx"
             self.onnx = onnx.InferenceSession(model)
+            self.onnx_input = self.onnx.get_inputs()[0].name
         else:
             self.nn = "tf"
             self.model = keras.models.load_model(model).signatures[  # type:ignore
@@ -37,7 +38,7 @@ class Detector(object):
         elif self.nn == "onnx":
             output = self.onnx.run(
                 self.output_fmt,
-                {"input": np.transpose(input_data, (0, 3, 1, 2))},
+                {self.onnx_input: np.transpose(input_data, (0, 3, 1, 2))},
             )
             return output
         else:

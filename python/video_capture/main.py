@@ -5,6 +5,7 @@ from .video_capture import WebCamVideoCapture, InuVideoCapture
 from message_broker.transport import Publisher
 from .config import *
 
+
 def run():
     if DEVICE == "webcam":
         vc = WebCamVideoCapture()

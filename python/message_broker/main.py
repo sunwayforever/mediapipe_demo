@@ -16,7 +16,7 @@ def run():
     pub_sock.bind(f"tcp://127.0.0.1:{OUTPUT_PORT}")
 
     while True:
-        pub_sock.send_multipart(sub_sock.recv_multipart())
+        pub_sock.send(sub_sock.recv())
 
 
 if __name__ == "__main__":
