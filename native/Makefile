@@ -37,7 +37,7 @@ ${BIN}:${OBJ} ${NN_OBJ} tflite/libtensorflow-lite.a
 swig: _inu_stream.so inu_stream.py
 
 inu_stream.py inu_stream_wrap.cxx:inu_stream.i
-	swig -c++ -python inu_stream.i
+	swig -c++ -python -threads inu_stream.i
 
 _inu_stream.so:inu_stream_wrap.cxx inu_stream.o video_capture.o
 	g++ $^ ${CPPFLAGS} ${CXXFLAGS} -I/usr/include/python3.8/ -lpython3.8 -shared ${LDFLAGS} -o $@ ${LDLIBS}

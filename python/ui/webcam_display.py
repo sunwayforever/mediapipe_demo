@@ -125,25 +125,15 @@ class WebcamDisplay(object):
         y2 = self.palm_box.ymin + self.palm_box.height
 
         cv2.rectangle(self.image, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        for i, kp in enumerate(self.palm_box.keypoints):
-            cv2.putText(
-                self.image,
-                f"{i}",
-                (kp[0], kp[1]),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 0),
-                1,
-            )
-
         cv2.putText(
             self.image,
             "{:.2f}".format(self.palm_box.score),
             (x1, y1 - 6),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
-            (0, 255, 0),
-            2,
+            (255, 0, 0),
+            1,
+            cv2.LINE_AA,
         )
 
     def annotate_face_bounding_box(self):
@@ -162,8 +152,9 @@ class WebcamDisplay(object):
             (x1, y1 - 6),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
-            (0, 0, 255),
-            2,
+            (255, 0, 0),
+            1,
+            cv2.LINE_AA,
         )
 
     def annotate_hand_landmark(self):
