@@ -8,6 +8,7 @@ import time
 from hand_landmark.hand_points import *
 from face_landmark.face_points import *
 from iris_landmark.iris_points import *
+from common import util
 
 
 class FPS(object):
@@ -42,17 +43,34 @@ class WebcamDisplay(object):
         self.image = None
         self.surface = None
         self.eye_surfaces = None
+        self.iris_surfaces = None
         self.palm_box = None
         self.hand_surface = None
+        self.gaze = None
         self.backend = backend
 
     def annotate_image(self):
         self.annotate_fps()
-        self.annotate_face_bounding_box()
         self.annotate_face_landmark()
+        self.annotate_face_bounding_box()
+        self.annotate_iris_landmark()
         self.annotate_eye_landmark()
-        self.annotate_palm_bounding_box()
         self.annotate_hand_landmark()
+        self.annotate_palm_bounding_box()
+        self.annotate_gaze()
+
+    def annotate_gaze(self):
+        if self.gaze is None:
+            return
+
+        x = util.remap(self.gaze[0], [-20, 20], [0, self.image.shape[1]])
+        cv2.circle(
+            self.image,
+            (int(x), self.image.shape[0] - 30),
+            color=(0x0, 0xff, 0xff),
+            radius=3,
+            thickness=3,
+        )
 
     def annotate_fps(self):
         cv2.putText(
@@ -103,7 +121,6 @@ class WebcamDisplay(object):
     def annotate_eye_landmark(self):
         if self.eye_surfaces is None:
             return
-
         for eye_surface in self.eye_surfaces:
             for a, b in zip(
                 eye_landmark_connections[::2], eye_landmark_connections[1::2]
@@ -115,6 +132,19 @@ class WebcamDisplay(object):
                     color=(0, 0, 255),
                 )
 
+    def annotate_iris_landmark(self):
+        if self.iris_surfaces is None:
+            return
+        for iris_surface in self.iris_surfaces:
+            for point in iris_surface[:, :2]:
+                cv2.circle(
+                    self.image,
+                    tuple(point),
+                    color=(0xFF, 0x63, 0x47),
+                    radius=1,
+                    thickness=1,
+                )
+
     def annotate_palm_bounding_box(self):
         if self.palm_box is None:
             return
@@ -124,38 +154,16 @@ class WebcamDisplay(object):
         y1 = self.palm_box.ymin
         y2 = self.palm_box.ymin + self.palm_box.height
 
-        cv2.rectangle(self.image, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        cv2.putText(
-            self.image,
-            "{:.2f}".format(self.palm_box.score),
-            (x1, y1 - 6),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (255, 0, 0),
-            1,
-            cv2.LINE_AA,
-        )
+        util.draw_border(self.image, (x1, y1), (x2, y2), (255, 0, 0), 2, 3, 5)
 
     def annotate_face_bounding_box(self):
         if self.face_box is None:
             return
-
         x1 = self.face_box.xmin
         x2 = self.face_box.xmin + self.face_box.width
         y1 = self.face_box.ymin
         y2 = self.face_box.ymin + self.face_box.height
-
-        cv2.rectangle(self.image, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        cv2.putText(
-            self.image,
-            "{:.2f}".format(self.face_box.score),
-            (x1, y1 - 6),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (255, 0, 0),
-            1,
-            cv2.LINE_AA,
-        )
+        util.draw_border(self.image, (x1, y1), (x2, y2), (255, 0, 0), 2, 5, 10)
 
     def annotate_hand_landmark(self):
         if self.hand_surface is None:
@@ -165,7 +173,7 @@ class WebcamDisplay(object):
             cv2.circle(
                 self.image,
                 tuple(point),
-                color=(255, 255, 0),
+                color=(0xFF, 0xA5, 0x0),
                 radius=2,
                 thickness=2,
             )
@@ -183,6 +191,8 @@ class WebcamDisplay(object):
         self.face_box = None
         self.surface = None
         self.eye_surfaces = None
+        self.iris_surfaces = None
+        self.gaze = None
 
     def reset_palm(self):
         self.palm_box = None
@@ -211,7 +221,13 @@ class WebcamDisplay(object):
 
         if topic == b"eye_landmark":
             self.eye_surfaces = data
+
+        if topic == b"iris_landmark":
+            self.iris_surfaces = data
             self.fps.update("iris_landmark")
+
+        if topic == b"gaze":
+            self.gaze = data
 
         if topic == b"palm_box":
             self.palm_box = data

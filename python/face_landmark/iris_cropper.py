@@ -13,14 +13,15 @@ class IrisCropper(object):
         ret = []
         for landmark in (left_eye_points, right_eye_points):
             eye_surface = surface[landmark]
-            x1, y1, x2, y2 = (
+            x1, y1, x2, y2 = util.square_rect(
                 eye_surface[:, 0].min(),
                 eye_surface[:, 1].min(),
                 eye_surface[:, 0].max(),
                 eye_surface[:, 1].max(),
             )
-            # TODO: ~/source/mediapipe/mediapipe/calculators/image/image_cropping_calculator.cc
-            margin_w, margin_h = (x2 - x1) // 2, (y2 - y1) // 2
+
+            # ~/source/mediapipe/mediapipe/calculators/image/image_cropping_calculator.cc
+            margin_w, margin_h = (x2 - x1) * 13 // 20, (y2 - y1) * 13 // 20
             translation_mat = util.get_translation_mat(x1 - margin_w, y1 - margin_h)
 
             ret.append(

@@ -70,6 +70,8 @@ class PalmDetector(object):
         y1 = box.ymin
         y2 = box.ymin + box.height
 
+        x1, y1, x2, y2 = util.square_rect(x1, y1, x2, y2)
+
         shift_y = (y2 - y1) // 2
         margin_w, margin_h = (x2 - x1) * 4 // 5, (y2 - y1) * 4 // 5
 

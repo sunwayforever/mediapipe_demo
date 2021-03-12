@@ -19,17 +19,19 @@ def run():
 
     subscriber = QThreadedSubscriber()
 
-    # ZMQ_SUB: image face_box face_landmark eye_landmark face_reset palm_box palm_reset hand_landmark
+    # ZMQ_SUB: image face_box face_landmark eye_landmark iris_landmark face_reset palm_box palm_reset hand_landmark gaze
     subscriber.sub(
         [
             b"image",
             b"face_box",
             b"face_landmark",
             b"eye_landmark",
+            b"iris_landmark",
             b"face_reset",
             b"palm_box",
             b"palm_reset",
             b"hand_landmark",
+            b"gaze",
         ],
         WebcamDisplay(backend),
     )

@@ -11,6 +11,22 @@ from collections import namedtuple
 ROIImage = namedtuple("ROIImage", ["image", "mat"])
 
 
+def square_rect(x1, y1, x2, y2):
+    center_x = (x1 + x2) // 2
+    center_y = (y1 + y2) // 2
+    width, height = x2 - x1, y2 - y1
+
+    width = max(width, height)
+    height = width
+
+    new_x1 = center_x - width // 2
+    new_x2 = center_x + width // 2
+    new_y1 = center_y - height // 2
+    new_y2 = center_y + height // 2
+
+    return new_x1, new_y1, new_x2, new_y2
+
+
 def get_aspect_ratio(top, bottom, left, right):
     A = distance.euclidean(top, bottom)
     B = distance.euclidean(left, right)
@@ -37,8 +53,10 @@ def get_translation_mat(x, y):
     return np.array([[1, 0, x], [0, 1, y], [0, 0, 1]])
 
 
-def remap(x, lo, hi, scale):
-    return (x - lo) / (hi - lo + 1e-6) * scale
+def remap(x, range_a, range_b):
+    return (x - range_a[0]) / (range_a[1] - range_a[0] + 1e-6) * (
+        range_b[1] - range_b[0]
+    ) + range_b[0]
 
 
 def sigmoid(x):
@@ -100,3 +118,24 @@ def config_gpu_memory(gpu_mem_cap):
             )
         except RuntimeError as e:
             print("Can not set GPU memory config", e)
+
+
+def draw_border(img, pt1, pt2, color, thickness, r, d):
+    x1, y1 = pt1
+    x2, y2 = pt2
+    # Top left
+    cv2.line(img, (x1 + r, y1), (x1 + r + d, y1), color, thickness)
+    cv2.line(img, (x1, y1 + r), (x1, y1 + r + d), color, thickness)
+    cv2.ellipse(img, (x1 + r, y1 + r), (r, r), 180, 0, 90, color, thickness)
+    # Top right
+    cv2.line(img, (x2 - r, y1), (x2 - r - d, y1), color, thickness)
+    cv2.line(img, (x2, y1 + r), (x2, y1 + r + d), color, thickness)
+    cv2.ellipse(img, (x2 - r, y1 + r), (r, r), 270, 0, 90, color, thickness)
+    # Bottom left
+    cv2.line(img, (x1 + r, y2), (x1 + r + d, y2), color, thickness)
+    cv2.line(img, (x1, y2 - r), (x1, y2 - r - d), color, thickness)
+    cv2.ellipse(img, (x1 + r, y2 - r), (r, r), 90, 0, 90, color, thickness)
+    # Bottom right
+    cv2.line(img, (x2 - r, y2), (x2 - r - d, y2), color, thickness)
+    cv2.line(img, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
+    cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)

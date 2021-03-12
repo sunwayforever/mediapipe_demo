@@ -6,8 +6,10 @@ import numpy as np
 from .config import *
 from .iris_points import *
 from .eye_estimator import EyeEstimator
+from .gaze_estimator import GazeEstimator
 from message_broker.transport import Publisher
-from common import util, Detector
+from common import util, Detector, PointVelocityFilter
+
 
 class IrisLandmarkDetector(Detector):
     def __init__(self):
@@ -21,6 +23,15 @@ class IrisLandmarkDetector(Detector):
         )
         self.publisher = Publisher()
         self.eye_estimator = EyeEstimator()
+        self.gaze_estimator = GazeEstimator()
+        self.eye_velocity_filters = [
+            [PointVelocityFilter() for _ in range(N_EYE_POINTS)],
+            [PointVelocityFilter() for _ in range(N_EYE_POINTS)],
+        ]
+        self.iris_velocity_filters = [
+            [PointVelocityFilter() for _ in range(N_IRIS_POINTS)],
+            [PointVelocityFilter() for _ in range(N_IRIS_POINTS)],
+        ]
 
     def __call__(self, topic, data):
         if topic == b"iris_roi":
@@ -59,13 +70,28 @@ class IrisLandmarkDetector(Detector):
             eye_surface = util.restore_coordinates(eye_surface, mat)
             iris_surface = util.restore_coordinates(iris_surface, mat)
 
+            eye_surface = eye_surface.astype("float32")
+            iris_surface = iris_surface.astype("float32")
+
+            for filter, point in zip(self.eye_velocity_filters[index], eye_surface):
+                point[:2] = filter.update(point[:2])
+
+            for filter, point in zip(self.iris_velocity_filters[index], iris_surface):
+                point[:2] = filter.update(point[:2])
+
             eye_surfaces.append(eye_surface.astype(int))
             iris_surfaces.append(iris_surface.astype(int))
 
+        eye_surfaces = np.array(eye_surfaces)
+        iris_surfaces = np.array(iris_surfaces)
         # ZMQ_PUB: eye_landmark
         self.publisher.pub(b"eye_landmark", eye_surfaces)
         # ZMQ_PUB: iris_landmark
         self.publisher.pub(b"iris_landmark", iris_surfaces)
+        # ZMQ_PUB: gaze
+        self.publisher.pub(
+            b"gaze", self.gaze_estimator.estimate(eye_surfaces, iris_surfaces)
+        )
         # ZMQ_PUB: eye_aspect_ratio
         self.publisher.pub(
             b"eye_aspect_ratio",

@@ -10,6 +10,7 @@ from box_detection.box_detector import BoxDetector, BoxConfig
 
 from common import util, PointVelocityFilter
 
+
 class FaceDetector(object):
     def __init__(self):
         face_box_config = BoxConfig(
@@ -63,9 +64,11 @@ class FaceDetector(object):
     @staticmethod
     def crop(image, box):
         x1 = box.xmin
-        x2 = box.xmin + box.width
         y1 = box.ymin
+        x2 = box.xmin + box.width
         y2 = box.ymin + box.height
+
+        x1, y1, x2, y2 = util.square_rect(x1, y1, x2, y2)
 
         # [[file:~/source/mediapipe/mediapipe/modules/face_landmark/face_detection_front_detection_to_roi.pbtxt::\[mediapipe.RectTransformationCalculatorOptions.ext\] {]]
         margin_w, margin_h = (x2 - x1) // 4, (y2 - y1) // 4
