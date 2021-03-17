@@ -6,12 +6,14 @@ import dlib
 from cv2 import cv2
 from scipy.spatial.transform import Rotation
 
+from message_broker.transport import Publisher
 from common import util, Detector
 
 
 class GazeDetector(Detector):
     def __init__(self):
         super().__init__(util.get_resource("../model/gaze.onnx"), {"onnx": ["156"]})
+        self.publisher = Publisher()
         self.image = None
         self.REYE_INDICES = np.array([36, 39])
         self.LEYE_INDICES = np.array([42, 45])
@@ -137,7 +139,11 @@ class GazeDetector(Detector):
         image = np.expand_dims(image, axis=0)
         data = super().invoke(image)[0]
         pitch, yaw = data[0]
-        print(pitch, yaw)
+        normalized_gaze_vector = -np.array(
+            [np.cos(pitch) * np.sin(yaw), np.sin(pitch), np.cos(pitch) * np.cos(yaw)]
+        )
+        gaze_vector = normalized_gaze_vector @ self.normalized_rot.as_matrix()
+        print(f"gaze:{GazeDetector.vec_to_angel(gaze_vector)}")
 
     def _get_normalized_image(self):
         self._compute_center_3d()
@@ -145,10 +151,6 @@ class GazeDetector(Detector):
         distance = np.linalg.norm(self.center_3d)
         scale = self._get_scale_matrix(distance)
         conversion_matrix = scale @ self.normalized_rot.as_matrix()
-
-        # print(self.normalized_camera_matrix)
-        # print(conversion_matrix)
-        # print(self.camera_matrix_inv)
         projection_matrix = (
             self.normalized_camera_matrix @ conversion_matrix @ self.camera_matrix_inv
         )
@@ -173,6 +175,9 @@ class GazeDetector(Detector):
             useExtrinsicGuess=True,
             flags=cv2.SOLVEPNP_ITERATIVE,
         )
+        # ZMQ_PUB: rotation
+        self.publisher.pub(b"rotation", (rvec[0], rvec[1], rvec[2]))
+
         rot = Rotation.from_rotvec(rvec)
         self.head_pose_rot = rot
         self.head_position = tvec
@@ -202,3 +207,10 @@ class GazeDetector(Detector):
             ],
             dtype=np.float,
         )
+
+    @staticmethod
+    def vec_to_angel(vec):
+        x, y, z = vec
+        pitch = np.arcsin(-y)
+        yaw = np.arctan2(-x, -z)
+        return np.rad2deg(np.array([pitch, yaw]))
