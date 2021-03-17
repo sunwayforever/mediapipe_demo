@@ -23,10 +23,10 @@ class GazeEstimator(Detector):
             127, 227, 137, 213, 138, 136, 149, 171, 152, 400,
             378, 394, 397, 435, 401, 454, 356, 70, 63, 105,
             66, 55, 285, 336, 296, 334, 300, 168, 197, 195,
-            4, 60, 2, 164, 325, 337, 153, 159, 157, 112, 
+            4, 60, 2, 164, 325, 337, 153, 159, 157, 112,
             154, 145, 381, 385, 387, 249, 373, 374, 146, 73,
             0, 302, 267, 304, 375, 405, 314, 17, 84, 181,
-            90, 86, 15, 318, 321, 319, 16, 72, 
+            90, 86, 15, 318, 321, 319, 16, 72,
         ])
         # fmt: on
         self.LANDMARKS = np.array(
@@ -114,9 +114,9 @@ class GazeEstimator(Detector):
             dtype=np.float32,
         )
         self.camera_matrix_inv = np.linalg.inv(self.camera_matrix)
-        self.head_pose_rot = None
-        self.head_position = None
-        self.center_3d = None
+        self.rotation_vec = None
+        self.translation_vec = None
+        self.face_center = None
         self.normalized_rot = None
         self.landmarks = None
         self.image = None
@@ -145,16 +145,43 @@ class GazeEstimator(Detector):
         data = super().invoke(image)[0]
         pitch, yaw = data[0]
         normalized_gaze_vector = -np.array(
-            [np.cos(pitch) * np.sin(yaw), np.sin(pitch), np.cos(pitch) * np.cos(yaw)]
+            [np.cos(pitch) * np.sin(yaw), np.sin(pitch), np.cos(pitch) * np.cos(yaw)]  # type: ignore
         )
         gaze_vector = normalized_gaze_vector @ self.normalized_rot.as_matrix()
+        # ZMQ_PUB: gaze
+        self.publisher.pub(
+            b"gaze",
+            (
+                # self.rotation_vec,
+                # self.translation_vec,
+                # gaze_vector,
+                self.projectPoints(
+                    np.vstack(
+                        [
+                            self.LANDMARKS[30],
+                            self.LANDMARKS[30] + 0.08 * gaze_vector,
+                        ],
+                    )
+                ),
+            ),
+        )
         print(f"gaze:{GazeEstimator.vec_to_angel(gaze_vector)}")
 
+    def projectPoints(self, points):
+        points, _ = cv2.projectPoints(
+            points,
+            self.rotation_vec.as_matrix(),
+            self.translation_vec,
+            self.camera_matrix,
+            np.zeros((1, 5)),
+        )
+        return points.reshape(-1, 2)
+
     def _get_normalized_image(self):
-        self._compute_center_3d()
+        self._compute_face_center()
         self._compute_normalized_rot()
-        distance = np.linalg.norm(self.center_3d)
-        scale = self._get_scale_matrix(distance)
+        distance = np.linalg.norm(self.face_center)
+        scale = GazeEstimator._get_scale_matrix(distance)
         conversion_matrix = scale @ self.normalized_rot.as_matrix()
         projection_matrix = (
             self.normalized_camera_matrix @ conversion_matrix @ self.camera_matrix_inv
@@ -165,6 +192,14 @@ class GazeEstimator(Detector):
             (224, 224),
         )
         image = image.astype(np.float32) / 255.0
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+        image[:, :, 0] -= mean[0]
+        image[:, :, 0] /= std[0]
+        image[:, :, 1] -= mean[1]
+        image[:, :, 1] /= std[1]
+        image[:, :, 2] -= mean[2]
+        image[:, :, 2] /= std[2]
         return image
 
     def estimate_head_pose(self):
@@ -184,26 +219,27 @@ class GazeEstimator(Detector):
         # self.publisher.pub(b"rotation", (rvec[0], rvec[1], rvec[2]))
 
         rot = Rotation.from_rotvec(rvec)
-        self.head_pose_rot = rot
-        self.head_position = tvec
+        self.rotation_vec = rot
+        self.translation_vec = tvec
 
     def _compute_normalized_rot(self):
-        z_axis = util.normalize_vector(self.center_3d)
-        head_rot = self.head_pose_rot.as_matrix()
+        z_axis = util.normalize_vector(self.face_center)
+        head_rot = self.rotation_vec.as_matrix()
         head_x_axis = head_rot[:, 0]
         y_axis = util.normalize_vector(np.cross(z_axis, head_x_axis))
         x_axis = util.normalize_vector(np.cross(y_axis, z_axis))
         self.normalized_rot = Rotation.from_matrix(np.vstack([x_axis, y_axis, z_axis]))
 
-    def _compute_center_3d(self):
-        rot = self.head_pose_rot.as_matrix()
-        model3d = self.LANDMARKS @ rot.T + self.head_position.ravel()
+    def _compute_face_center(self):
+        rot = self.rotation_vec.as_matrix()
+        model3d = self.LANDMARKS @ rot.T + self.translation_vec.ravel()
         center = model3d[
             np.concatenate([self.REYE_INDICES, self.LEYE_INDICES, self.MOUTH_INDICES])
         ].mean(axis=0)
-        self.center_3d = center
+        self.face_center = center
 
-    def _get_scale_matrix(self, distance):
+    @staticmethod
+    def _get_scale_matrix(distance):
         return np.array(
             [
                 [1, 0, 0],

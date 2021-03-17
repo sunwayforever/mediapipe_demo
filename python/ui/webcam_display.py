@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # 2021-02-22 16:00
 from cv2 import cv2
+import numpy as np
 from collections import defaultdict
 import time
 
@@ -62,14 +63,11 @@ class WebcamDisplay(object):
     def annotate_gaze(self):
         if self.gaze is None:
             return
-
-        x = util.remap(self.gaze[0], [-20, 20], [0, self.image.shape[1]])
-        cv2.circle(
-            self.image,
-            (int(x), self.image.shape[0] - 30),
-            color=(0x0, 0xff, 0xff),
-            radius=3,
-            thickness=3,
+        print("got gaze point")
+        (points,) = self.gaze
+        points = np.round(points).astype(np.int)
+        cv2.line(
+            self.image, tuple(points[0]), tuple(points[1]), (255, 0, 0), 1, cv2.LINE_AA
         )
 
     def annotate_fps(self):
