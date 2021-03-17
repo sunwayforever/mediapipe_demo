@@ -6,6 +6,7 @@ import numpy as np
 from .config import *
 from .face_points import *
 from .pose_estimator import PoseEstimator
+from .gaze_estimator import GazeEstimator
 from .mouth_estimator import MouthEstimator
 from .iris_cropper import IrisCropper
 from message_broker.transport import Publisher
@@ -24,6 +25,7 @@ class FaceLandmarkDetector(Detector):
         )
         self.publisher = Publisher()
         self.pose_estimator = PoseEstimator()
+        self.gaze_estimator = GazeEstimator()
         self.mouth_estimator = MouthEstimator()
         self.iris_cropper = IrisCropper()
         self.point_velocity_filters = [
@@ -35,14 +37,14 @@ class FaceLandmarkDetector(Detector):
             self.detect(data)
 
     def detect(self, face_roi):
-        face_img, mat = face_roi.image, face_roi.mat
+        orig_face_img, mat = face_roi.image, face_roi.mat
         scale_mat = util.get_scale_mat(
-            face_img.shape[1] / IMG_WIDTH,
-            face_img.shape[0] / IMG_HEIGHT,
+            orig_face_img.shape[1] / IMG_WIDTH,
+            orig_face_img.shape[0] / IMG_HEIGHT,
         )
         mat = mat @ scale_mat
 
-        face_img = cv2.resize(face_img, (IMG_WIDTH, IMG_HEIGHT))
+        face_img = cv2.resize(orig_face_img, (IMG_WIDTH, IMG_HEIGHT))
         input_data = face_img.astype(np.float32) / 255.0
         input_data = np.expand_dims(input_data, axis=0)
 
@@ -76,5 +78,14 @@ class FaceLandmarkDetector(Detector):
                 surface[
                     mouth_points,
                 ]
+            ),
+        )
+
+        self.publisher.pub(
+            b"gaze",
+            self.gaze_estimator.estimate(
+                orig_face_img,
+                self.pose_estimator.get_distance(),
+                self.pose_estimator.get_normalized_rot(),
             ),
         )

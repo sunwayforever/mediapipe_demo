@@ -3,6 +3,9 @@
 # 2020-12-17 17:41
 import numpy as np
 from cv2 import cv2
+from scipy.spatial.transform import Rotation
+
+from common import util
 
 
 class PoseEstimator:
@@ -30,13 +33,14 @@ class PoseEstimator:
 
         self.camera_matrix = np.array(
             [
-                [1010, 0, 628],
-                [0, 1014, 339],
+                [640, 0, 320],
+                [0, 640, 240],
                 [0, 0, 1],
             ],
             dtype="double",
         )
         self.dist_coeffs = np.zeros((4, 1))
+        self.rot = None
 
     def _solve(self, image_points):
         if hasattr(self, "rotation_vector"):
@@ -60,10 +64,33 @@ class PoseEstimator:
                 useExtrinsicGuess=False,
             )
 
-    def _get3dof(self, rvec, tvec):
-        rvec = rvec.ravel()
-        return (rvec[0], rvec[1], rvec[2] + np.pi)
+        self.rot = Rotation.from_rotvec(self.rotation_vector.ravel())
+        self.center_3d = self._compute_center_3d()
+        self.normalized_rot = self._compute_normalized_rot()
+
+    def _compute_normalized_rot(self):
+        z_axis = util.normalize_vector(self.center_3d)
+        head_rot = self.rot.as_matrix()
+        head_x_axis = head_rot[:, 0]
+        y_axis = util.normalize_vector(np.cross(z_axis, head_x_axis))
+        x_axis = util.normalize_vector(np.cross(y_axis, z_axis))
+        return Rotation.from_matrix(np.vstack([x_axis, y_axis, z_axis]))
+
+    def _compute_center_3d(self):
+        rot = self.rot.as_matrix()
+        model3d = self.model_points @ rot.T + self.translation_vector.ravel()
+        return model3d[2].ravel()  # nose
+
+    def get_normalized_rot(self):
+        return self.normalized_rot
+
+    def get_distance(self):
+        return np.linalg.norm(self.center_3d)
+
+    def get_rotation_degree(self):
+        rvec = self.rotation_vector.ravel()
+        return (rvec[0], rvec[1], rvec[2])
 
     def estimate(self, image_points):
         self._solve(image_points)
-        return self._get3dof(self.rotation_vector, self.translation_vector)
+        return self.get_rotation_degree()

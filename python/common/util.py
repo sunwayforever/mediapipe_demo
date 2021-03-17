@@ -139,3 +139,7 @@ def draw_border(img, pt1, pt2, color, thickness, r, d):
     cv2.line(img, (x2 - r, y2), (x2 - r - d, y2), color, thickness)
     cv2.line(img, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
     cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
+
+
+def normalize_vector(vector):
+    return vector / np.linalg.norm(vector)

@@ -6,7 +6,6 @@ import numpy as np
 from .config import *
 from .iris_points import *
 from .eye_estimator import EyeEstimator
-from .gaze_estimator import GazeEstimator
 from message_broker.transport import Publisher
 from common import util, Detector, PointVelocityFilter
 
@@ -88,10 +87,6 @@ class IrisLandmarkDetector(Detector):
         self.publisher.pub(b"eye_landmark", eye_surfaces)
         # ZMQ_PUB: iris_landmark
         self.publisher.pub(b"iris_landmark", iris_surfaces)
-        # ZMQ_PUB: gaze
-        self.publisher.pub(
-            b"gaze", self.gaze_estimator.estimate(eye_surfaces, iris_surfaces)
-        )
         # ZMQ_PUB: eye_aspect_ratio
         self.publisher.pub(
             b"eye_aspect_ratio",

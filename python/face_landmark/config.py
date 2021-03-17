@@ -4,6 +4,7 @@
 
 MODEL = "../model/face_landmark.onnx"
 # MODEL = "../model/face_landmark"
+GAZE_MODEL = "../model/gaze.onnx"
 
 IMG_WIDTH = 192
 IMG_HEIGHT = 192
