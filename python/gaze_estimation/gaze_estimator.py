@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # 2021-03-17 16:30
 import numpy as np
-import dlib
 from cv2 import cv2
 from scipy.spatial.transform import Rotation
 
@@ -10,7 +9,7 @@ from message_broker.transport import Publisher
 from common import util, Detector
 
 
-class GazeDetector(Detector):
+class GazeEstimator(Detector):
     def __init__(self):
         super().__init__(util.get_resource("../model/gaze.onnx"), {"onnx": ["156"]})
         self.publisher = Publisher()
@@ -19,6 +18,17 @@ class GazeDetector(Detector):
         self.LEYE_INDICES = np.array([42, 45])
         self.MOUTH_INDICES = np.array([48, 54])
 
+        # fmt: off
+        self.landmark_index = np.array([
+            127, 227, 137, 213, 138, 136, 149, 171, 152, 400,
+            378, 394, 397, 435, 401, 454, 356, 70, 63, 105,
+            66, 55, 285, 336, 296, 334, 300, 168, 197, 195,
+            4, 60, 2, 164, 325, 337, 153, 159, 157, 112, 
+            154, 145, 381, 385, 387, 249, 373, 374, 146, 73,
+            0, 302, 267, 304, 375, 405, 314, 17, 84, 181,
+            90, 86, 15, 318, 321, 319, 16, 72, 
+        ])
+        # fmt: on
         self.LANDMARKS = np.array(
             [
                 [-0.07141807, -0.02827123, 0.08114384],
@@ -92,8 +102,6 @@ class GazeDetector(Detector):
             ],
             dtype=np.float,
         )
-        self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(util.get_resource("../model/dlib.dat"))
         self.normalized_camera_matrix = np.array(
             [[1600, 0, 112], [0, 1600, 112], [0, 0, 1]], dtype=np.float32
         )
@@ -110,30 +118,26 @@ class GazeDetector(Detector):
         self.head_position = None
         self.center_3d = None
         self.normalized_rot = None
+        self.landmarks = None
+        self.image = None
 
-    def __call__(self, topic, image):
+    def __call__(self, topic, data):
         if topic == b"image":
-            self.image = image
-            self.detect_face(image)
+            self.image = data
+        if topic == b"face_landmark":
+            self.landmarks = self._convert_landmarks(data)
 
-    def detect_face(self, image):
-        bboxes = self.detector(image[:, :, ::-1], 0)
-        detected = None
-        for bbox in bboxes:
-            predictions = self.predictor(image[:, :, ::-1], bbox)
-            landmarks = np.array(
-                [(pt.x, pt.y) for pt in predictions.parts()], dtype=np.float
-            )
-            self.publisher.pub(b"dlib_landmark", landmarks)
-            bbox = np.array(
-                [[bbox.left(), bbox.top()], [bbox.right(), bbox.bottom()]],
-                dtype=np.float,
-            )
-            detected = (bbox, landmarks)
-            break
-        if detected is not None:
-            self.estimate_head_pose(detected[1])
-            self.estimate_gaze()
+        self.estimate()
+
+    def _convert_landmarks(self, face_landmark):
+        return face_landmark[self.landmark_index, :2]
+
+    def estimate(self):
+        if self.landmarks is None or self.image is None:
+            return
+
+        self.estimate_head_pose()
+        self.estimate_gaze()
 
     def estimate_gaze(self):
         image = self._get_normalized_image()
@@ -144,7 +148,7 @@ class GazeDetector(Detector):
             [np.cos(pitch) * np.sin(yaw), np.sin(pitch), np.cos(pitch) * np.cos(yaw)]
         )
         gaze_vector = normalized_gaze_vector @ self.normalized_rot.as_matrix()
-        print(f"gaze:{GazeDetector.vec_to_angel(gaze_vector)}")
+        print(f"gaze:{GazeEstimator.vec_to_angel(gaze_vector)}")
 
     def _get_normalized_image(self):
         self._compute_center_3d()
@@ -163,12 +167,12 @@ class GazeDetector(Detector):
         image = image.astype(np.float32) / 255.0
         return image
 
-    def estimate_head_pose(self, landmarks):
+    def estimate_head_pose(self):
         rvec = np.zeros(3, dtype=np.float)
         tvec = np.array([0, 0, 1], dtype=np.float)
         _, rvec, tvec = cv2.solvePnP(
             self.LANDMARKS,
-            landmarks,
+            self.landmarks,
             self.camera_matrix,
             np.zeros((1, 5)),
             rvec,
@@ -177,7 +181,7 @@ class GazeDetector(Detector):
             flags=cv2.SOLVEPNP_ITERATIVE,
         )
         # ZMQ_PUB: rotation
-        self.publisher.pub(b"rotation", (rvec[0], rvec[1], rvec[2]))
+        # self.publisher.pub(b"rotation", (rvec[0], rvec[1], rvec[2]))
 
         rot = Rotation.from_rotvec(rvec)
         self.head_pose_rot = rot

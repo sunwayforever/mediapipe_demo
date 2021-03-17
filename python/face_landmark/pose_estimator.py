@@ -21,20 +21,20 @@ class PoseEstimator:
 
         self.model_points = np.array(
             [
-                [0.392, 0.231, 0.025],
-                [0.443, 0.231, 0.025],
-                [0.421, 0.291, 0],
-                [0.381, 0.350, 0.025],
-                [0.449, 0.350, 0.025],
-                [0.417, 0.360, 0.024],
+                [392, 231, -25],
+                [443, 231, -25],
+                [421, 291, 0],
+                [381, 350, -25],
+                [449, 350, -25],
+                [417, 360, -24],
             ],
             dtype=np.float32,
         )
 
         self.camera_matrix = np.array(
             [
-                [640, 0, 320],
-                [0, 640, 240],
+                [1010, 0, 628],
+                [0, 1014, 339],
                 [0, 0, 1],
             ],
             dtype="double",
@@ -89,7 +89,7 @@ class PoseEstimator:
 
     def get_rotation_degree(self):
         rvec = self.rotation_vector.ravel()
-        return (rvec[0], rvec[1], rvec[2])
+        return (rvec[0], rvec[1], rvec[2] + np.pi)
 
     def estimate(self, image_points):
         self._solve(image_points)

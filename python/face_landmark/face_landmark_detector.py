@@ -5,7 +5,7 @@ import numpy as np
 
 from .config import *
 from .face_points import *
-# from .pose_estimator import PoseEstimator
+from .pose_estimator import PoseEstimator
 from .mouth_estimator import MouthEstimator
 from .iris_cropper import IrisCropper
 from message_broker.transport import Publisher
@@ -23,7 +23,7 @@ class FaceLandmarkDetector(Detector):
             },
         )
         self.publisher = Publisher()
-        # self.pose_estimator = PoseEstimator()
+        self.pose_estimator = PoseEstimator()
         self.mouth_estimator = MouthEstimator()
         self.iris_cropper = IrisCropper()
         self.point_velocity_filters = [
@@ -66,9 +66,9 @@ class FaceLandmarkDetector(Detector):
         # ZMQ_PUB: face_landmark
         self.publisher.pub(b"face_landmark", surface)
         # # ZMQ_PUB: rotation
-        # self.publisher.pub(
-        #     b"rotation", self.pose_estimator.estimate(surface[pose_points, :2])
-        # )
+        self.publisher.pub(
+            b"rotation", self.pose_estimator.estimate(surface[pose_points, :2])
+        )
         # ZMQ_PUB: mouth_aspect_ratio
         self.publisher.pub(
             b"mouth_aspect_ratio",
