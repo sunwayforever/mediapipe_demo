@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-22 16:00
-from cv2 import cv2
+import cv2
 import numpy as np
 from collections import defaultdict
 import time
@@ -210,7 +210,7 @@ class WebcamDisplay(object):
             self.fps.reset(["hand", "hand_landmark"])
 
         if topic == b"face_landmark":
-            self.surface = data
+            self.surface = data.astype("int")
             self.fps.update("face_landmark")
 
         if topic == b"image":
@@ -218,10 +218,10 @@ class WebcamDisplay(object):
             self.fps.update("webcam")
 
         if topic == b"eye_landmark":
-            self.eye_surfaces = data
+            self.eye_surfaces = data.astype("int")
 
         if topic == b"iris_landmark":
-            self.iris_surfaces = data
+            self.iris_surfaces = data.astype("int")
             self.fps.update("iris_landmark")
 
         if topic == b"gaze":
@@ -232,7 +232,7 @@ class WebcamDisplay(object):
             self.fps.update("hand")
 
         if topic == b"hand_landmark":
-            self.hand_surface = data
+            self.hand_surface = data.astype("int")
             self.fps.update("hand_landmark")
 
         if self.image is None:

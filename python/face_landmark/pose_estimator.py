@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # 2020-12-17 17:41
 import numpy as np
-from cv2 import cv2
+import cv2
 from scipy.spatial.transform import Rotation
 
 from common import util

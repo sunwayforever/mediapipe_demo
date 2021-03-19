@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-20 12:41
-from cv2 import cv2
+import cv2
 import numpy as np
 import time
 

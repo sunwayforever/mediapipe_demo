@@ -3,7 +3,7 @@
 # 2021-03-17 16:30
 import numpy as np
 import dlib
-from cv2 import cv2
+import cv2
 from scipy.spatial.transform import Rotation
 
 from message_broker.transport import Publisher

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from cv2 import cv2
+import cv2
 import numpy as np
 
 from .config import *
@@ -57,8 +57,7 @@ class FaceLandmarkDetector(Detector):
         # ZMQ_PUB: iris_roi
         self.publisher.pub(b"iris_roi", self.iris_cropper.crop(face_img, surface, mat))
 
-        surface = util.restore_coordinates(surface, mat)
-        surface = surface.astype("float32")
+        surface = util.restore_coordinates(surface, mat).astype("float32")
         # filter
         for filter, point in zip(self.point_velocity_filters, surface):
             point[:2] = filter.update(point[:2])

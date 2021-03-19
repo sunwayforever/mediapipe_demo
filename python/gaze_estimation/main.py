@@ -6,7 +6,7 @@ from .gaze_estimator import GazeEstimator
 
 
 def run():
-    # ZMQ_SUB: image
+    # ZMQ_SUB: image,face_landmark
     Subscriber().sub([b"image", b"face_landmark"], GazeEstimator()).loop()
 
 

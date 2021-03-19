@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-02-24 10:10
-from cv2 import cv2
+import cv2
 
 from common import util
 

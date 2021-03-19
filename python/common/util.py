@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2020-12-22 14:58
-from cv2 import cv2
+import cv2
 import numpy as np
 import os
 from scipy.spatial import distance

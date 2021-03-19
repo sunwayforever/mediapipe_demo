@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from cv2 import cv2
+import cv2
 import numpy as np
 
 from .config import *
@@ -22,7 +22,6 @@ class IrisLandmarkDetector(Detector):
         )
         self.publisher = Publisher()
         self.eye_estimator = EyeEstimator()
-        self.gaze_estimator = GazeEstimator()
         self.eye_velocity_filters = [
             [PointVelocityFilter() for _ in range(N_EYE_POINTS)],
             [PointVelocityFilter() for _ in range(N_EYE_POINTS)],

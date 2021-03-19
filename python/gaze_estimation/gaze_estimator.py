@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # 2021-03-17 16:30
 import numpy as np
-from cv2 import cv2
+import cv2
 from scipy.spatial.transform import Rotation
 
 from message_broker.transport import Publisher
