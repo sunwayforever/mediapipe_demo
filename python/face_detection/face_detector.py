@@ -58,8 +58,28 @@ class FaceDetector(object):
         face = FaceDetector.crop(image, box)
         # ZMQ_PUB: face_roi
         self.publisher.pub(b"face_roi", face)
-        # ZMQ_PUB: face_roi_slow
-        self.publisher.pub(b"face_roi_slow", face)
+        # ZMQ_PUB: face_roi_small
+        self.publisher.pub(b"face_roi_small", FaceDetector.crop_small(image, box))
+
+    @staticmethod
+    def crop_small(image, box):
+        x1 = box.xmin
+        y1 = box.ymin
+        x2 = box.xmin + box.width
+        y2 = box.ymin + box.height
+        x1, y1, x2, y2 = util.square_rect(x1, y1, x2, y2)
+
+        shift_y = (y2 - y1) // 10
+        left_eye, right_eye = box.keypoints[0], box.keypoints[1]
+        angle = (
+            math.atan2(right_eye[1] - left_eye[1], right_eye[0] - left_eye[0]) * 57.3
+        )
+        rot_mat = cv2.getRotationMatrix2D(
+            (image.shape[0] / 2, image.shape[1] / 2), angle, 1
+        )
+        image = cv2.warpAffine(image, rot_mat, (image.shape[1], image.shape[0]))
+        image = image[y1 - shift_y : y2 - shift_y, x1:x2]
+        return image
 
     @staticmethod
     def crop(image, box):

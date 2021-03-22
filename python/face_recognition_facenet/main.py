@@ -6,8 +6,8 @@ from message_broker.transport import Subscriber
 
 
 def run():
-    # ZMQ_SUB: face_roi_slow, enroll
-    Subscriber().sub([b"face_roi_slow", b"enroll"], FaceRecognizer()).loop()
+    # ZMQ_SUB: face_roi_small, enroll
+    Subscriber().sub([b"face_roi_small", b"enroll"], FaceRecognizer()).loop()
 
 
 if __name__ == "__main__":

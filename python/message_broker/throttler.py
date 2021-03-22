@@ -9,7 +9,7 @@ class Throttler(object):
     def __init__(self):
         self.throttle = {
             # facenet
-            b"face_roi_slow": 1,
+            b"face_roi_small": 1,
         }
 
         self.next_time = {}
