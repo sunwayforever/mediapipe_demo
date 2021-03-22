@@ -120,7 +120,7 @@ def config_gpu_memory(gpu_mem_cap):
             print("Can not set GPU memory config", e)
 
 
-def draw_border(img, pt1, pt2, color, thickness, r, d):
+def draw_border(img, pt1, pt2, color, thickness, r, d, label=None):
     x1, y1 = pt1
     x2, y2 = pt2
     # Top left
@@ -139,6 +139,17 @@ def draw_border(img, pt1, pt2, color, thickness, r, d):
     cv2.line(img, (x2 - r, y2), (x2 - r - d, y2), color, thickness)
     cv2.line(img, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
     cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
+    if label is not None:
+        cv2.putText(
+            img,
+            label,
+            (x1 + 10, y1 + 15),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
 
 
 def normalize_vector(vector):

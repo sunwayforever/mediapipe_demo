@@ -48,6 +48,7 @@ class WebcamDisplay(object):
         self.palm_box = None
         self.hand_surface = None
         self.gaze = None
+        self.objects = None
         self.backend = backend
 
     def annotate_image(self):
@@ -59,6 +60,22 @@ class WebcamDisplay(object):
         self.annotate_hand_landmark()
         self.annotate_palm_bounding_box()
         self.annotate_gaze()
+        self.annotate_objects()
+
+    def annotate_objects(self):
+        if self.objects is None:
+            return
+        for box, label, _ in self.objects:
+            util.draw_border(
+                self.image,
+                (box[0], box[1]),
+                (box[2], box[3]),
+                (0x0, 0xBF, 0xFF),
+                2,
+                5,
+                10,
+                label,
+            )
 
     def annotate_gaze(self):
         if self.gaze is None:
@@ -234,6 +251,10 @@ class WebcamDisplay(object):
         if topic == b"hand_landmark":
             self.hand_surface = data.astype("int")
             self.fps.update("hand_landmark")
+
+        if topic == b"objects":
+            self.objects = data
+            self.fps.update("objects")
 
         if self.image is None:
             return
