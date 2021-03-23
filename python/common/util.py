@@ -37,7 +37,16 @@ def get_scale_mat(x, y):
     return np.array([[x, 0, 0], [0, y, 0], [0, 0, 1]])
 
 
-def restore_coordinates(surface: np.ndarray, mat) -> np.ndarray:
+def restore_coordinates_2d(surface: np.ndarray, mat) -> np.ndarray:
+    # surface: [x,y]
+    # mat: 3x3 homogeneous
+    surface = np.concatenate((surface, np.ones((surface.shape[0], 1))), axis=1)
+    surface = (mat @ surface.T).T
+    return surface[:, :2]
+
+
+def restore_coordinates_3d(surface: np.ndarray, mat) -> np.ndarray:
+    # surface: [x,y,depth]
     # mat: 3x3 homogeneous
     tmp_surface: np.ndarray = surface[:, :2]
     tmp_surface = np.concatenate(
@@ -73,6 +82,7 @@ def get_resource(f):
 
 
 def resize(img, roi_width, roi_height):
+    # NEXT: replace with `resize_and_keep_aspect_ratio`
     # height/width
     orig_aspect_ratio = img.shape[0] / img.shape[1]
     roi_aspect_ratio = roi_height / roi_width
@@ -154,3 +164,37 @@ def draw_border(img, pt1, pt2, color, thickness, r, d, label=None):
 
 def normalize_vector(vector):
     return vector / np.linalg.norm(vector)
+
+
+def resize_and_keep_aspect_ratio(img, roi_width, roi_height):
+    orig_height, orig_width = img.shape[:2]
+    # height/width
+    orig_aspect_ratio = orig_height / orig_width
+    roi_aspect_ratio = roi_height / roi_width
+    h_padding, v_padding = 0, 0
+
+    if orig_aspect_ratio < roi_aspect_ratio:
+        new_width = roi_width
+        new_height = int(roi_width * orig_aspect_ratio)
+        v_padding = roi_height - new_height
+    else:
+        new_height = roi_height
+        new_width = int(roi_height / orig_aspect_ratio)
+        h_padding = roi_width - new_width
+
+    img = cv2.resize(img, (new_width, new_height))
+    v_padding = int(v_padding / 2)
+    h_padding = int(h_padding / 2)
+    img = cv2.copyMakeBorder(
+        img,
+        v_padding,
+        v_padding,
+        h_padding,
+        h_padding,
+        cv2.BORDER_CONSTANT,
+        value=(0, 0, 0),
+    )
+    translation_mat = get_translation_mat(-h_padding, -v_padding)
+    scale_mat = get_scale_mat(orig_width / new_width, orig_height / new_height)
+    # resize again to make sure output image is exactly (roi_width, roi_height)
+    return cv2.resize(img, (roi_width, roi_height)), scale_mat @ translation_mat

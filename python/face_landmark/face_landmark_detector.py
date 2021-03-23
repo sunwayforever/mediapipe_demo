@@ -57,7 +57,7 @@ class FaceLandmarkDetector(Detector):
         # ZMQ_PUB: iris_roi
         self.publisher.pub(b"iris_roi", self.iris_cropper.crop(face_img, surface, mat))
 
-        surface = util.restore_coordinates(surface, mat).astype("float32")
+        surface = util.restore_coordinates_3d(surface, mat).astype("float32")
         # filter
         for filter, point in zip(self.point_velocity_filters, surface):
             point[:2] = filter.update(point[:2])

@@ -48,7 +48,7 @@ class HandLandmarkDetector(Detector):
         surface = np.array(surface)
         if prob < MIN_PROB_THRESH:
             return None
-        surface = util.restore_coordinates(surface, mat)
+        surface = util.restore_coordinates_3d(surface, mat)
         surface = surface.astype("float32")
         # filter
         for filter, point in zip(self.point_velocity_filters, surface):

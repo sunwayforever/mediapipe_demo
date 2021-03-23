@@ -20,27 +20,24 @@ class ObjectDetector(Detector):
             self.detect(data)
 
     def detect(self, image):
-        image_height, image_width = image.shape[:2]
-        image = cv2.resize(image, (IMG_WIDTH, IMG_HEIGHT))
+        image, mat = util.resize_and_keep_aspect_ratio(image, IMG_WIDTH, IMG_HEIGHT)
         image = np.expand_dims(image, axis=0)
         boxes, classes, scores, count = super().invoke(image)
 
         count = count.astype("int")[0]
         classes = classes.astype("int").ravel()
         scores = scores.ravel()
-        boxes = boxes.squeeze()
+        # box shape: [1, N, 4], and -1 axis is [ymin,xmin,ymax,xmax],
+        # but opencv requires [xmin,ymin,xmax,ymax]
+        boxes = boxes.reshape(-1, 2, 2)[:, :, ::-1]
         results = []
+        rect = np.array([IMG_HEIGHT, IMG_WIDTH])
         for i in range(count):
             if scores[i] < MIN_SCORE_THRESH:
                 continue
-            ymin, xmin, ymax, xmax = boxes[i]
+            box = util.restore_coordinates_2d(boxes[i] * rect, mat).astype("int")
             result = (
-                (
-                    int(xmin * image_width),
-                    int(ymin * image_height),
-                    int(xmax * image_width),
-                    int(ymax * image_height),
-                ),
+                box,
                 LABELS.get(classes[i], "unknown"),
                 scores[i],
             )

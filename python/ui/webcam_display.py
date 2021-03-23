@@ -68,8 +68,8 @@ class WebcamDisplay(object):
         for box, label, _ in self.objects:
             util.draw_border(
                 self.image,
-                (box[0], box[1]),
-                (box[2], box[3]),
+                tuple(box[0]),
+                tuple(box[1]),
                 (0x0, 0xBF, 0xFF),
                 2,
                 5,
