@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # 2021-02-26 17:58
 from .face_recognizer import FaceRecognizer
-from message_broker.transport import Subscriber
+from message_broker import Subscriber
 
 
 def run():

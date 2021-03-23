@@ -7,7 +7,7 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtQuick import QQuickImageProvider
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
-from message_broker.transport import Publisher
+from message_broker import Publisher
 from common import util
 
 

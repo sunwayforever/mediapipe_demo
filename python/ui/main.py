@@ -5,7 +5,7 @@ from sys import argv, exit
 from PyQt5.QtGui import QGuiApplication
 from PyQt5.QtQml import QQmlApplicationEngine
 
-from message_broker.transport import QThreadedSubscriber
+from message_broker import QThreadedSubscriber
 from .webcam_display import WebcamDisplay
 from .facenet_display import FacenetDisplay
 from .rotation_display import RotationDisplay

@@ -8,7 +8,7 @@ from .face_points import *
 from .pose_estimator import PoseEstimator
 from .mouth_estimator import MouthEstimator
 from .iris_cropper import IrisCropper
-from message_broker.transport import Publisher
+from message_broker import Publisher
 from common import util, Detector, PointVelocityFilter
 
 

@@ -6,7 +6,7 @@ import numpy as np
 from .config import *
 from .iris_points import *
 from .eye_estimator import EyeEstimator
-from message_broker.transport import Publisher
+from message_broker import Publisher
 from common import util, Detector, PointVelocityFilter
 
 

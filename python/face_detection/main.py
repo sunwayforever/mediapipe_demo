@@ -3,7 +3,7 @@
 # 2021-02-23 10:07
 from .config import *
 from .face_detector import FaceDetector
-from message_broker.transport import Subscriber
+from message_broker import Subscriber
 
 
 def run():

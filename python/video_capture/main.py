@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # 2021-03-02 10:35
 from .video_capture import WebCamVideoCapture, InuVideoCapture
-from message_broker.transport import Publisher
+from message_broker import Publisher
 from .config import *
 
 

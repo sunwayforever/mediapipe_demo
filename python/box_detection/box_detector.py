@@ -7,7 +7,7 @@ import numpy as np
 from collections import namedtuple
 
 from common import util, Detector
-from message_broker.transport import Publisher
+from message_broker import Publisher
 
 BoxConfig = namedtuple(
     "BoxConfig",

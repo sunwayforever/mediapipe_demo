@@ -6,7 +6,7 @@ import cv2
 # from .inception_resnet_v1 import InceptionResNetV1
 from .config import *
 from .face_database import FaceDatabase
-from message_broker.transport import Publisher
+from message_broker import Publisher
 
 
 class FaceRecognizer:

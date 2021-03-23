@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from scipy.spatial.transform import Rotation
 
-from message_broker.transport import Publisher
+from message_broker import Publisher
 from common import util, Detector
 
 

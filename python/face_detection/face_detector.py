@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 from .config import *
-from message_broker.transport import Publisher
+from message_broker import Publisher
 from box_detection.box_detector import BoxDetector, BoxConfig
 
 from common import util, PointVelocityFilter

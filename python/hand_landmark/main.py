@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # 2021-02-23 10:20
 from .hand_landmark_detector import HandLandmarkDetector
-from message_broker.transport import Subscriber
+from message_broker import Subscriber
 
 
 def run():

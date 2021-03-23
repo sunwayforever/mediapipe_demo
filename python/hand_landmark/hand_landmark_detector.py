@@ -6,7 +6,7 @@ import numpy as np
 from .config import *
 from .hand_points import *
 from .hand_gesture_estimator import HandGestureEstimator
-from message_broker.transport import Publisher
+from message_broker import Publisher
 from common import util, Detector, PointVelocityFilter
 
 

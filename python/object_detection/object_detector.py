@@ -5,8 +5,7 @@ import numpy as np
 
 from .config import *
 from .labels import LABELS
-from message_broker.transport import Publisher
-
+from message_broker import Publisher
 from common import util, Detector
 
 

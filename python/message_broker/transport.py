@@ -8,6 +8,8 @@ from PyQt5.QtCore import QRunnable, QThreadPool
 from .config import *
 from .throttler import Throttler
 
+_MSG_DELIMITER = b":"
+
 
 class Publisher(object):
     def __init__(self):
@@ -18,7 +20,7 @@ class Publisher(object):
 
     def pub(self, topic, data=None):
         if self.throttler.is_send_allowed(topic):
-            self.sock.send(topic + b":" + pickle.dumps(data))
+            self.sock.send(topic + _MSG_DELIMITER + pickle.dumps(data))
 
 
 class Subscriber(object):
@@ -43,7 +45,7 @@ class Subscriber(object):
         ready_socks = dict(self.poller.poll())
         for sock in ready_socks.keys():
             raw_data = sock.recv()
-            index = raw_data.index(b":")
+            index = raw_data.index(_MSG_DELIMITER)
             topic, data = (
                 raw_data[:index],
                 pickle.loads(raw_data[index + 1 :]),

@@ -3,7 +3,7 @@
 # 2021-02-23 10:07
 from .config import *
 from .object_detector import ObjectDetector
-from message_broker.transport import Subscriber
+from message_broker import Subscriber
 
 
 def run():
