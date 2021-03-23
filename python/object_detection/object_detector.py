@@ -30,11 +30,11 @@ class ObjectDetector(Detector):
         # but opencv requires [xmin,ymin,xmax,ymax]
         boxes = boxes.reshape(-1, 2, 2)[:, :, ::-1]
         results = []
-        rect = np.array([IMG_HEIGHT, IMG_WIDTH])
+        rect = np.array([IMG_WIDTH, IMG_HEIGHT])
         for i in range(count):
             if scores[i] < MIN_SCORE_THRESH:
                 continue
-            box = util.restore_coordinates_2d(boxes[i] * rect, mat).astype("int")
+            box = util.restore_coords_2d(boxes[i] * rect, mat).astype("int")
             result = (
                 box,
                 LABELS.get(classes[i], "unknown"),

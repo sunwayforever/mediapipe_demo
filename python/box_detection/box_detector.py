@@ -3,7 +3,6 @@
 # 2021-02-20 12:41
 import math
 import numpy as np
-
 from collections import namedtuple
 
 from common import util, Detector
@@ -59,11 +58,10 @@ class BoxDetector(Detector):
         self.publisher = Publisher()
 
     def detect(self, img):
-        self.img_width = img.shape[1]
-        self.img_height = img.shape[0]
+        self.img_height, self.img_width = img.shape[:2]
         # img_rgb = np.stack([img_rgb, img_rgb, img_rgb], axis=2)
         # [[file:~/source/mediapipe/mediapipe/modules/face_detection/face_detection_front_cpu.pbtxt::keep_aspect_ratio: true]]
-        input_data, v_padding, h_padding = util.resize(
+        input_data, mat = util.resize_and_keep_aspect_ratio(
             img, self.config.img_width, self.config.img_height
         )
         input_data = (input_data - 127.5) / 127.5
@@ -74,38 +72,25 @@ class BoxDetector(Detector):
 
         boxes = self._post_detect(regressors, classificators)
 
-        restore_x = (
-            lambda x: (x - h_padding)
-            * self.config.img_width
-            * self.img_width
-            / ((1 - 2 * h_padding) * self.config.img_width)
-        )
-        restore_y = (
-            lambda y: (y - v_padding)
-            * self.config.img_height
-            * self.img_height
-            / ((1 - 2 * v_padding) * self.config.img_height)
-        )
-        restore_width = (
-            lambda w: w
-            * self.config.img_width
-            * self.img_width
-            / ((1 - 2 * h_padding) * self.config.img_width)
-        )
-        restore_height = (
-            lambda h: h
-            * self.config.img_height
-            * self.img_height
-            / ((1 - 2 * v_padding) * self.config.img_height)
-        )
+        rect = np.array([self.config.img_width, self.config.img_height])
         for box in boxes:
-            box.xmin = int(restore_x(box.xmin))
-            box.ymin = int(restore_y(box.ymin))
-            box.width = int(restore_width(box.width))
-            box.height = int(restore_height(box.height))
+            # convert boxes to ndarray
+            coord = [box.xmin, box.ymin, box.xmin + box.width, box.ymin + box.height]
             for point in box.keypoints:
-                point[0] = int(restore_x(point[0]))
-                point[1] = int(restore_y(point[1]))
+                coord.append(point[0])
+                coord.append(point[1])
+
+            coord = np.array(coord).reshape(-1, 2)
+            coord = util.restore_coords_2d(coord * rect, mat).astype("int")
+
+            # convert ndarray back to boxes
+            box.xmin = coord[0][0]
+            box.ymin = coord[0][1]
+            box.width = coord[1][0] - coord[0][0]
+            box.height = coord[1][1] - coord[0][1]
+            for i, point in enumerate(box.keypoints):
+                point[0] = coord[2 + i][0]
+                point[1] = coord[2 + i][1]
 
         # 最终输出坐标是 webcam image 上的绝对坐标
         return boxes

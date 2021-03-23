@@ -37,7 +37,7 @@ def get_scale_mat(x, y):
     return np.array([[x, 0, 0], [0, y, 0], [0, 0, 1]])
 
 
-def restore_coordinates_2d(surface: np.ndarray, mat) -> np.ndarray:
+def restore_coords_2d(surface: np.ndarray, mat) -> np.ndarray:
     # surface: [x,y]
     # mat: 3x3 homogeneous
     surface = np.concatenate((surface, np.ones((surface.shape[0], 1))), axis=1)
@@ -45,7 +45,7 @@ def restore_coordinates_2d(surface: np.ndarray, mat) -> np.ndarray:
     return surface[:, :2]
 
 
-def restore_coordinates_3d(surface: np.ndarray, mat) -> np.ndarray:
+def restore_coords_3d(surface: np.ndarray, mat) -> np.ndarray:
     # surface: [x,y,depth]
     # mat: 3x3 homogeneous
     tmp_surface: np.ndarray = surface[:, :2]
@@ -79,37 +79,6 @@ def compute_distance(a, b):
 def get_resource(f):
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), f)
     return path
-
-
-def resize(img, roi_width, roi_height):
-    # NEXT: replace with `resize_and_keep_aspect_ratio`
-    # height/width
-    orig_aspect_ratio = img.shape[0] / img.shape[1]
-    roi_aspect_ratio = roi_height / roi_width
-    h_padding, v_padding = 0, 0
-
-    if orig_aspect_ratio < roi_aspect_ratio:
-        new_width = roi_width
-        new_height = int(roi_width * orig_aspect_ratio)
-        v_padding = roi_height - new_height
-    else:
-        new_height = roi_height
-        new_width = int(roi_height / orig_aspect_ratio)
-        h_padding = roi_width - new_width
-
-    img = cv2.resize(img, (int(new_width), int(new_height)))
-    v_padding = int(v_padding / 2)
-    h_padding = int(h_padding / 2)
-    img = cv2.copyMakeBorder(
-        img,
-        v_padding,
-        v_padding,
-        h_padding,
-        h_padding,
-        cv2.BORDER_CONSTANT,
-        value=(0, 0, 0),
-    )
-    return img, v_padding / roi_width, h_padding / roi_height
 
 
 def config_gpu_memory(gpu_mem_cap):

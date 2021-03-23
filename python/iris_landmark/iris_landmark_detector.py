@@ -65,8 +65,8 @@ class IrisLandmarkDetector(Detector):
                 eye_surface[:, 0] = IMG_WIDTH - eye_surface[:, 0]
                 iris_surface[:, 0] = IMG_WIDTH - iris_surface[:, 0]
 
-            eye_surface = util.restore_coordinates_3d(eye_surface, mat)
-            iris_surface = util.restore_coordinates_3d(iris_surface, mat)
+            eye_surface = util.restore_coords_3d(eye_surface, mat)
+            iris_surface = util.restore_coords_3d(iris_surface, mat)
 
             eye_surface = eye_surface.astype("float32")
             iris_surface = iris_surface.astype("float32")
