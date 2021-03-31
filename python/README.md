@@ -2,11 +2,15 @@
 
 ## Prerequisite
 
-  - pip uninstall opencv-python
-
   - pip install numpy
 
-  - build opencv from source
+  - opencv
+    
+      - pip uninstall opencv-python
+    
+      - pip install opencv-python-headless
+    
+      - or build opencv from source in case you need `cv.imshow`
     
     `opencv-python` from pip was built with Qt support, which has
     `version mismatch` issue with pyqt5, we need to build `opencv` from

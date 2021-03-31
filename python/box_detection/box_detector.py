@@ -173,11 +173,7 @@ class BoxDetector(Detector):
         # 的比值.因为考虑了 anchor 的 scale, 不同大小的 anchor 会以相同的`比例`
         # capture 它附近的 box在 MediaPipe 的代码中, anchor 的 w,h 均为 1.0, 所以它
         # 对特别小的物体效果不佳
-        x_center = raw_boxes[box_offset]
-        y_center = raw_boxes[box_offset + 1]
-        w = raw_boxes[box_offset + 2]
-        h = raw_boxes[box_offset + 3]
-
+        x_center, y_center, w, h = raw_boxes[box_offset : box_offset + 4]
         # x_center, y_center 转换为 box 的绝对中心坐标 (0~1)
         x_center = (
             x_center / self.config.img_width * self.anchors[index].w
@@ -197,7 +193,6 @@ class BoxDetector(Detector):
         box_data[2] = w
         box_data[3] = h
 
-        # for 6 keypoint
         for j in range(self.config.num_keypoint * 2):
             box_data[4 + j] = raw_boxes[box_offset + 4 + j]
             if j % 2 == 0:
