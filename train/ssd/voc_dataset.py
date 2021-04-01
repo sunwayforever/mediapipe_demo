@@ -79,7 +79,7 @@ class VOCDataset:
             confs, locs = compute_groud_truth(boxes, labels)
             yield img, confs, locs
 
-    def get_train_data(self, batch, n_batch):
+    def get_train_data(self, batch):
         return (
             tf.data.Dataset.from_generator(
                 partial(self._generator, subset="train"),
@@ -87,24 +87,19 @@ class VOCDataset:
             )
             .shuffle(batch)
             .batch(batch)
-            .take(n_batch)
         )
 
-    def get_test_data(self, batch, n_batch):
-        return (
-            tf.data.Dataset.from_generator(
-                partial(self._generator, subset="test"),
-                (tf.float32, tf.int64, tf.float32),
-            )
-            .batch(batch)
-            .take(n_batch)
-        )
+    def get_test_data(self, batch):
+        return tf.data.Dataset.from_generator(
+            partial(self._generator, subset="test"),
+            (tf.float32, tf.int64, tf.float32),
+        ).batch(batch)
 
 
 if __name__ == "__main__":
     voc = VOCDataset("/home/sunway/download/VOCdevkit/VOC2007")
     print(voc._get_annotation("004954"))
 
-    data = voc.get_test_data(batch=5, n_batch=1)
+    data = voc.get_test_data(batch=5)
     for x in data:
         print(x)

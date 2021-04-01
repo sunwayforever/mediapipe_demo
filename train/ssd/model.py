@@ -83,6 +83,7 @@ def get_extra_feature_layers():
 
 
 def get_conf_layers():
+    #
     return [
         layers.Conv2D(4 * N_CLASSES, kernel_size=3, padding="same"),
         layers.Conv2D(6 * N_CLASSES, kernel_size=3, padding="same"),
@@ -145,8 +146,7 @@ class SSDModel(Model):
             x = layer(x)
             self.classify(x)
 
-        ret = tf.concat(self.confs, axis=1), tf.concat(self.locs, axis=1)
-        return ret
+        return tf.concat(self.confs, axis=1), tf.concat(self.locs, axis=1)
 
 
 if __name__ == "__main__":
@@ -155,6 +155,5 @@ if __name__ == "__main__":
     ssd = SSDModel()
     input = np.random.normal(size=(1, 300, 300, 3))
     confs, locs = ssd(input)
-    import ipdb
-
-    ipdb.set_trace()
+    print(confs.shape)
+    print(locs.shape)
