@@ -9,7 +9,7 @@ import tensorflow.keras.layers as layers
 from config import *
 
 
-def get_vgg16_layers():
+def get_vgg16_layers(resume):
     # get vgg16 layers, but ignore layers after `conv 5-3`
     # vgg = VGG16(weights="imagenet", include_top=False)
     # vgg16_conv4 = tf.keras.Model(vgg.inputs[0], vgg.get_layer("block5_conv3").tmp_output)
@@ -33,14 +33,15 @@ def get_vgg16_layers():
         layers.Conv2D(512, 3, padding="same", activation="relu"),
     ]
 
-    tmp_input = layers.Input(shape=[None, None, 3])
-    tmp_output = tmp_input
-    for layer in vgg16_layers:
-        tmp_output = layer(tmp_output)
-    Model(tmp_input, tmp_output)
-    origin_vgg = VGG16(weights="imagenet")
-    for i in range(len(vgg16_layers)):
-        vgg16_layers[i].set_weights(origin_vgg.get_layer(index=i + 1).get_weights())
+    if not resume:
+        tmp_input = layers.Input(shape=[None, None, 3])
+        tmp_output = tmp_input
+        for layer in vgg16_layers:
+            tmp_output = layer(tmp_output)
+        Model(tmp_input, tmp_output)
+        origin_vgg = VGG16(weights="imagenet")
+        for i in range(len(vgg16_layers)):
+            vgg16_layers[i].set_weights(origin_vgg.get_layer(index=i + 1).get_weights())
 
     return vgg16_layers
 
@@ -106,14 +107,17 @@ def get_loc_layers():
 
 
 class SSDModel(Model):
-    def __init__(self):
+    def __init__(self, resume):
         super().__init__()
-        self.vgg16_layers = get_vgg16_layers()
+        self.vgg16_layers = get_vgg16_layers(resume)
         self.vgg16_extra_layers = get_vgg16_extra_layers()
         self.extra_feature_layers = get_extra_feature_layers()
         self.conf_layers = get_conf_layers()
         self.loc_layers = get_loc_layers()
         self.bn = layers.BatchNormalization()
+        if resume:
+            print(f"load weights from {MODEL_WEIGHTS}")
+            self.load_weights(MODEL_WEIGHTS)
 
     def reset_classifier(self):
         self.confs = []

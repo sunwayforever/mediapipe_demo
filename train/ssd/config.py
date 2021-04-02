@@ -9,3 +9,5 @@ IMAGE_SIZE = 300
 N_CLASSES = 21
 
 HARD_NEGATIVE_RATIO = 5
+
+MODEL_WEIGHTS = "../../cache/ssd_weights"

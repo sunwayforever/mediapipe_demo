@@ -10,6 +10,7 @@ from functools import partial
 
 from config import *
 from box import compute_groud_truth
+from augment import Augment
 
 
 class VOCDataset:
@@ -19,6 +20,7 @@ class VOCDataset:
         self.ids = [x[:-4] for x in os.listdir(self.image_dir)]
         self.train_ids = self.ids[: len(self.ids) * 3 // 4]
         self.test_ids = self.ids[len(self.ids) * 3 // 4 :]
+        self.augment = Augment()
 
         self.id_to_name = [
             "aeroplane",
@@ -68,24 +70,35 @@ class VOCDataset:
     def _generator(self, subset):
         if subset == "train":
             ids = self.train_ids.copy()
-        else:
+            np.random.shuffle(ids)
+        elif subset == "test":
             ids = self.test_ids.copy()
-        np.random.shuffle(ids)
+            np.random.shuffle(ids)
+        else:
+            ids = subset
+
         for id in ids:
             img = self._get_image(id)
             h, w = img.shape[:2]
             boxes, labels = self._get_annotation(id)
+            img, boxes, labels = self.augment(img, boxes, labels)
+
             boxes = boxes / np.array([w, h, w, h])
             img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
             img = (img - 127.5) / 127.5
             confs, locs = compute_groud_truth(boxes, labels)
             yield img, confs, locs
 
-    def get_train_data(self, batch):
-        return tf.data.Dataset.from_generator(
-            partial(self._generator, subset="train"),
-            (tf.float32, tf.int64, tf.float32),
-        ).batch(batch)
+    def get_train_data(self, batch, n_batch):
+        return (
+            tf.data.Dataset.from_generator(
+                partial(self._generator, subset="train"),
+                (tf.float32, tf.int64, tf.float32),
+            )
+            .batch(batch)
+            .repeat()
+            .take(n_batch)
+        )
 
     def get_test_data(self, batch):
         return (
