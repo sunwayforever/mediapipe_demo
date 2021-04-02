@@ -19,6 +19,7 @@ class VOCDataset:
         self.ids = [x[:-4] for x in os.listdir(self.image_dir)]
         self.train_ids = self.ids[: len(self.ids) * 3 // 4]
         self.test_ids = self.ids[len(self.ids) * 3 // 4 :]
+
         self.id_to_name = [
             "aeroplane",
             "bicycle",
@@ -55,10 +56,10 @@ class VOCDataset:
             name = obj.find("name").text.lower().strip()
             box = obj.find("bndbox")
             xmin, ymin, xmax, ymax = (
-                int(box.find("xmin").text),
-                int(box.find("ymin").text),
-                int(box.find("xmax").text),
-                int(box.find("ymax").text),
+                int(box.find("xmin").text) - 1,
+                int(box.find("ymin").text) - 1,
+                int(box.find("xmax").text) - 1,
+                int(box.find("ymax").text) - 1,
             )
             boxes.append([xmin, ymin, xmax, ymax])
             labels.append(self.name_to_id[name] + 1)
@@ -66,9 +67,10 @@ class VOCDataset:
 
     def _generator(self, subset):
         if subset == "train":
-            ids = self.train_ids
+            ids = self.train_ids.copy()
         else:
-            ids = self.test_ids
+            ids = self.test_ids.copy()
+        np.random.shuffle(ids)
         for id in ids:
             img = self._get_image(id)
             h, w = img.shape[:2]
@@ -80,20 +82,20 @@ class VOCDataset:
             yield img, confs, locs
 
     def get_train_data(self, batch):
-        return (
-            tf.data.Dataset.from_generator(
-                partial(self._generator, subset="train"),
-                (tf.float32, tf.int64, tf.float32),
-            )
-            .shuffle(batch)
-            .batch(batch)
-        )
-
-    def get_test_data(self, batch):
         return tf.data.Dataset.from_generator(
-            partial(self._generator, subset="test"),
+            partial(self._generator, subset="train"),
             (tf.float32, tf.int64, tf.float32),
         ).batch(batch)
+
+    def get_test_data(self, batch):
+        return (
+            tf.data.Dataset.from_generator(
+                partial(self._generator, subset="test"),
+                (tf.float32, tf.int64, tf.float32),
+            )
+            .batch(batch)
+            .take(1)
+        )
 
 
 if __name__ == "__main__":

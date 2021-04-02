@@ -43,7 +43,8 @@ class SSDLoss(object):
         pos_index, all_index = self._hard_negative_mining(gt_confs, confs)
         conf_loss = self.cross_entropy(gt_confs[all_index], confs[all_index])
         loc_loss = self.smooth_l1(gt_locs[pos_index], locs[pos_index])
-        return conf_loss + loc_loss
+        num_pos = np.sum(pos_index)
+        return conf_loss / num_pos + loc_loss / num_pos
 
 
 if __name__ == "__main__":

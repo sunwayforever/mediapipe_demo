@@ -45,8 +45,8 @@ def gen_anchors():
 
 
 def compute_area(top_left, bottom_right):
-    rect = bottom_right - top_left
-    return np.clip(np.product(rect, -1), 0.0, 1.0)
+    rect = np.clip(bottom_right - top_left, 0.0, 1.0)
+    return np.product(rect, -1)
 
 
 def compute_iou(boxes_a, boxes_b):
