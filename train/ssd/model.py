@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.applications import VGG16
 import tensorflow.keras.layers as layers
+from tensorflow.keras import backend as K
 
 from config import *
 
@@ -114,7 +115,7 @@ class SSDModel(Model):
         self.extra_feature_layers = get_extra_feature_layers()
         self.conf_layers = get_conf_layers()
         self.loc_layers = get_loc_layers()
-        self.bn = layers.BatchNormalization()
+        self.bn = layers.Dropout(rate=0.2)
         if resume:
             print(f"load weights from {MODEL_WEIGHTS}")
             self.load_weights(MODEL_WEIGHTS)
@@ -134,7 +135,8 @@ class SSDModel(Model):
         self.locs.append(loc)
         self.index += 1
 
-    def call(self, x):
+    def call(self, x, training):
+        K.set_learning_phase(training)
         self.reset_classifier()
         # vgg16
         for layer in self.vgg16_layers:

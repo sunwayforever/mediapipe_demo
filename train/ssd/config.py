@@ -11,3 +11,11 @@ N_CLASSES = 21
 HARD_NEGATIVE_RATIO = 5
 
 MODEL_WEIGHTS = "../../cache/ssd_weights"
+
+LR = 1e-3
+MOMENTUM = 0.9
+WEIGHT_DECAY = 1e-4
+
+BATCH = 32
+N_BATCH = 200
+EPOCH = 100

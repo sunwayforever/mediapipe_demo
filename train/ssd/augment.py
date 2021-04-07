@@ -31,9 +31,9 @@ if __name__ == "__main__":
     import cv2
     from voc_dataset import VOCDataset
 
-    dataset = VOCDataset("/home/sunway/download/VOCdevkit/VOC2007")
-    img = dataset._get_image("009126")
-    boxes, labels = dataset._get_annotation("009126")
+    voc = VOCDataset("/home/sunway/download/VOCdevkit/VOC2007")
+    img = voc._get_image("009126")
+    boxes, labels = voc._get_annotation("009126")
 
     for box in boxes:
         cv2.rectangle(img, tuple(box[:2]), tuple(box[2:]), (255, 0, 0), 1, 1)

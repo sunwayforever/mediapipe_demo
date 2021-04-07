@@ -66,14 +66,43 @@ def compute_iou(boxes_a, boxes_b):
     return overlap / (area_a + area_b - overlap)
 
 
-def compute_groud_truth(boxes, labels):
-    anchors = gen_anchors()
-    # convert [cx,cy,w,h] to [xmin,ymin,xmax,ymax] for new_anchors
-    new_anchors = np.hstack(
-        [anchors[:, :2] - anchors[:, 2:] / 2, anchors[:, :2] + anchors[:, 2:] / 2]
+def center_to_corner(boxes):
+    return np.hstack([boxes[:, :2] - boxes[:, 2:] / 2, boxes[:, :2] + boxes[:, 2:] / 2])
+
+
+def corner_to_center(boxes):
+    return np.hstack(
+        [(boxes[..., :2] + boxes[..., 2:]) / 2, boxes[..., 2:] - boxes[..., :2]]
     )
+
+
+def encode(anchors, locs):
+    locs = corner_to_center(locs)
+    locs = np.hstack(
+        [
+            (locs[:, :2] - anchors[:, :2]) / anchors[:, 2:] / 0.1,
+            np.log(locs[:, 2:] / anchors[:, 2:]) / 0.2,
+        ]
+    )
+    return locs
+
+
+def decode(anchors, locs):
+    locs = np.hstack(
+        [
+            locs[:, :2] * 0.1 * anchors[:, 2:] + anchors[:, :2],
+            np.exp(locs[:, 2:] * 0.2) * anchors[:, 2:],
+        ],
+    )
+
+    locs = center_to_corner(locs)
+    return locs
+
+
+def compute_ground_truth(boxes, labels):
+    anchors = gen_anchors()
     # [n_anchors, n_boxes]
-    iou = compute_iou(new_anchors, boxes)
+    iou = compute_iou(center_to_corner(anchors), boxes)
 
     best_box_iou = np.max(iou, axis=1)
     best_box_index = np.argmax(iou, axis=1)
@@ -82,16 +111,8 @@ def compute_groud_truth(boxes, labels):
     confs[best_box_iou < 0.5] = 0
 
     locs = boxes[best_box_index]
-    # convert [xmin,ymin,xmax,ymax] of box to [cx,cy,w,h]
-    locs = np.hstack([(locs[:, :2] + locs[:, 2:]) / 2, locs[:, 2:] - locs[:, :2]])
-    # center locs to new_anchors
-    new_locs = np.hstack(
-        [
-            (locs[:, :2] - anchors[:, :2]) / anchors[:, 2:] / 0.1,
-            np.log(locs[:, 2:] / anchors[:, 2:]) / 0.2,
-        ]
-    )
-    return confs, new_locs
+    locs = encode(anchors, locs)
+    return confs, locs
 
 
 if __name__ == "__main__":
@@ -105,4 +126,4 @@ if __name__ == "__main__":
     )
     labels = np.array([17, 15])
 
-    compute_groud_truth(boxes, labels)
+    compute_ground_truth(boxes, labels)

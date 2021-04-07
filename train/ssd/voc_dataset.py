@@ -9,7 +9,7 @@ import xml.etree.ElementTree as XML
 from functools import partial
 
 from config import *
-from box import compute_groud_truth
+from box import compute_ground_truth, gen_anchors, decode
 from augment import Augment
 
 
@@ -86,7 +86,7 @@ class VOCDataset:
             boxes = boxes / np.array([w, h, w, h])
             img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
             img = (img - 127.5) / 127.5
-            confs, locs = compute_groud_truth(boxes, labels)
+            confs, locs = compute_ground_truth(boxes, labels)
             yield img, confs, locs
 
     def get_train_data(self, batch, n_batch):
@@ -100,21 +100,37 @@ class VOCDataset:
             .take(n_batch)
         )
 
-    def get_test_data(self, batch):
+    def get_test_data(self, batch, n_batch):
         return (
             tf.data.Dataset.from_generator(
                 partial(self._generator, subset="test"),
                 (tf.float32, tf.int64, tf.float32),
             )
             .batch(batch)
-            .take(1)
+            .repeat()
+            .take(n_batch)
         )
 
 
 if __name__ == "__main__":
     voc = VOCDataset("/home/sunway/download/VOCdevkit/VOC2007")
-    print(voc._get_annotation("004954"))
+    image, confs, locs = next(voc._generator(["002477"]))
+    anchors = gen_anchors()
+    locs = decode(anchors, locs)
 
-    data = voc.get_test_data(batch=5)
-    for x in data:
-        print(x)
+    for i in range(len(confs)):
+        if confs[i] == 0:
+            continue
+        x1, y1, x2, y2 = locs[i]
+        height, width, _ = image.shape
+        cv2.rectangle(
+            image,
+            (int(x1 * width), int(y1 * height)),
+            (int(x2 * width), int(y2 * height)),
+            (0, 0, 255),
+            1,
+            1,
+        )
+
+    cv2.imshow("", image)
+    cv2.waitKey(0)
