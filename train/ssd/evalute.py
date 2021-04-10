@@ -29,8 +29,10 @@ if __name__ == "__main__":
     confs, locs = np.squeeze(confs), np.squeeze(locs)
     confs = tf.math.softmax(confs, axis=-1)
 
+    import ipdb; ipdb.set_trace()
     scores = np.max(confs, axis=-1)
     classes = np.argmax(confs, axis=-1)
 
-    print(scores)
-    print(classes)
+    for i in range(8732):
+        if classes[i] != 0:
+            print(f"{i}:{classes[i]}:{scores[i]}")

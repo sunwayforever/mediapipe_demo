@@ -12,6 +12,7 @@ class SSDLoss(object):
     def __init__(self):
         # temp_cross_entropy 是用来比较哪个 box 的 loss 较大, 所以需要指定
         # reduction 为 none 避免 loss 被 reduce 成 scalar
+        # conf_layers 没有包含 softmax, 所以 from_logits 需要为 True
         # confs: (B, 8732, 21),
         # gt_confs: (B, 8732), 即 sparse categorical
         # temp_cross_entropy 输出为 (B, 8732)
@@ -43,8 +44,8 @@ class SSDLoss(object):
         pos_index, all_index = self._hard_negative_mining(gt_confs, confs)
         conf_loss = self.cross_entropy(gt_confs[all_index], confs[all_index])
         loc_loss = self.smooth_l1(gt_locs[pos_index], locs[pos_index])
-        num_pos = np.sum(pos_index)
-        return conf_loss / num_pos + loc_loss / num_pos
+        num_pos = tf.reduce_sum(tf.dtypes.cast(pos_index, tf.float32))
+        return conf_loss / num_pos, loc_loss / num_pos
 
 
 if __name__ == "__main__":
@@ -55,4 +56,7 @@ if __name__ == "__main__":
     gt_confs = np.random.randint(0, 21, size=(32, 100))
     gt_locs = np.random.normal(size=(32, 100, 4)).astype("float32")
 
-    print(loss(gt_confs, gt_locs, confs, locs))
+    print(
+        loss(gt_confs, gt_locs, (10 * np.eye(21)).astype("float32")[gt_confs], gt_locs)
+    )
+    # print(loss(gt_confs, gt_locs, confs, locs))

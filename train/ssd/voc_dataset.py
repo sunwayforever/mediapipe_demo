@@ -9,8 +9,8 @@ import xml.etree.ElementTree as XML
 from functools import partial
 
 from config import *
-from box import compute_ground_truth, gen_anchors, decode
-from augment import Augment
+from box import compute_ground_truth
+from transform import Transform
 
 
 class VOCDataset:
@@ -19,8 +19,11 @@ class VOCDataset:
         self.annotation_dir = os.path.join(data_dir, "Annotations")
         self.ids = [x[:-4] for x in os.listdir(self.image_dir)]
         self.train_ids = self.ids[: len(self.ids) * 3 // 4]
-        self.test_ids = self.ids[len(self.ids) * 3 // 4 :]
-        self.augment = Augment()
+        with open(os.path.join(data_dir, "ImageSets/Main/trainval.txt")) as f:
+            self.train_ids = [x.strip() for x in f]
+        with open(os.path.join(data_dir, "ImageSets/Main/test.txt")) as f:
+            self.test_ids = [x.strip() for x in f]
+        self.transform = Transform()
 
         self.id_to_name = [
             "aeroplane",
@@ -57,6 +60,9 @@ class VOCDataset:
         for obj in objects:
             name = obj.find("name").text.lower().strip()
             box = obj.find("bndbox")
+            difficult = int(obj.find("difficult").text)
+            if difficult:
+                continue
             xmin, ymin, xmax, ymax = (
                 int(box.find("xmin").text) - 1,
                 int(box.find("ymin").text) - 1,
@@ -81,11 +87,10 @@ class VOCDataset:
             img = self._get_image(id)
             h, w = img.shape[:2]
             boxes, labels = self._get_annotation(id)
-            img, boxes, labels = self.augment(img, boxes, labels)
-
+            if len(boxes) == 0:
+                continue
             boxes = boxes / np.array([w, h, w, h])
-            img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
-            img = (img - 127.5) / 127.5
+            img, boxes, labels = self.transform(img, boxes, labels)
             confs, locs = compute_ground_truth(boxes, labels)
             yield img, confs, locs
 
@@ -113,21 +118,34 @@ class VOCDataset:
 
 
 if __name__ == "__main__":
+    from box import *
+
     voc = VOCDataset("/home/sunway/download/VOCdevkit/VOC2007")
-    image, confs, locs = next(voc._generator(["002477"]))
+    _, confs, locs = next(voc._generator(["002477"]))
+    image = voc._get_image("002477")
     anchors = gen_anchors()
+    corner_anchors = center_to_corner(anchors)
     locs = decode(anchors, locs)
 
     for i in range(len(confs)):
         if confs[i] == 0:
             continue
         x1, y1, x2, y2 = locs[i]
+        xx1, yy1, xx2, yy2 = corner_anchors[i]
         height, width, _ = image.shape
         cv2.rectangle(
             image,
             (int(x1 * width), int(y1 * height)),
             (int(x2 * width), int(y2 * height)),
             (0, 0, 255),
+            1,
+            1,
+        )
+        cv2.rectangle(
+            image,
+            (int(xx1 * width), int(yy1 * height)),
+            (int(xx2 * width), int(yy2 * height)),
+            (0, 255, 0),
             1,
             1,
         )

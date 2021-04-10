@@ -45,7 +45,7 @@ def gen_anchors():
 
 
 def compute_area(top_left, bottom_right):
-    rect = np.clip(bottom_right - top_left, 0.0, 1.0)
+    rect = np.clip(bottom_right - top_left, a_min=0.0, a_max=None)
     return np.product(rect, -1)
 
 
@@ -108,7 +108,7 @@ def compute_ground_truth(boxes, labels):
     best_box_index = np.argmax(iou, axis=1)
     # [n_anchors,4]
     confs = labels[best_box_index]
-    confs[best_box_iou < 0.5] = 0
+    confs[best_box_iou < IOU_THRESHOLD] = 0
 
     locs = boxes[best_box_index]
     locs = encode(anchors, locs)
@@ -125,5 +125,7 @@ if __name__ == "__main__":
         ]
     )
     labels = np.array([17, 15])
+    confs, locs = compute_ground_truth(boxes, labels)
+    import ipdb
 
-    compute_ground_truth(boxes, labels)
+    ipdb.set_trace()

@@ -114,8 +114,10 @@ class SSDModel(Model):
         self.vgg16_extra_layers = get_vgg16_extra_layers()
         self.extra_feature_layers = get_extra_feature_layers()
         self.conf_layers = get_conf_layers()
+        self.bn = layers.BatchNormalization(
+            beta_initializer="glorot_uniform", gamma_initializer="glorot_uniform"
+        )
         self.loc_layers = get_loc_layers()
-        self.bn = layers.Dropout(rate=0.2)
         if resume:
             print(f"load weights from {MODEL_WEIGHTS}")
             self.load_weights(MODEL_WEIGHTS)
