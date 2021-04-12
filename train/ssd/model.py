@@ -2,12 +2,30 @@
 # -*- coding: utf-8 -*-
 # 2021-03-31 14:05
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.applications import VGG16
 import tensorflow.keras.layers as layers
 from tensorflow.keras import backend as K
 
 from config import *
+
+
+class L2Normalization(layers.Layer):
+    def __init__(self, gamma_init=2, **kwargs):
+        self.gamma_init = gamma_init
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.input_spec = [layers.InputSpec(shape=input_shape)]
+        gamma = self.gamma_init * np.ones((input_shape[3],))
+        self.gamma = K.variable(gamma, name="{}_gamma".format(self.name))
+        self.trainable_weights.append(self.gamma)
+        super().build(input_shape)
+
+    def call(self, x, mask=None):
+        outputs = K.l2_normalize(x, 3)
+        return outputs * self.gamma
 
 
 def get_vgg16_layers(resume):
@@ -108,15 +126,13 @@ def get_loc_layers():
 
 
 class SSDModel(Model):
-    def __init__(self, resume):
+    def __init__(self, resume=False):
         super().__init__()
         self.vgg16_layers = get_vgg16_layers(resume)
         self.vgg16_extra_layers = get_vgg16_extra_layers()
         self.extra_feature_layers = get_extra_feature_layers()
         self.conf_layers = get_conf_layers()
-        self.bn = layers.BatchNormalization(
-            beta_initializer="glorot_uniform", gamma_initializer="glorot_uniform"
-        )
+        self.bn = L2Normalization()
         self.loc_layers = get_loc_layers()
         if resume:
             print(f"load weights from {MODEL_WEIGHTS}")
@@ -137,7 +153,7 @@ class SSDModel(Model):
         self.locs.append(loc)
         self.index += 1
 
-    def call(self, x, training):
+    def call(self, x, training=True):
         K.set_learning_phase(training)
         self.reset_classifier()
         # vgg16

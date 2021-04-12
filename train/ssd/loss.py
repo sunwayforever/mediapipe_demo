@@ -29,16 +29,16 @@ class SSDLoss(object):
         # confs: (B, 8732, 21),
         # gt_confs: (B, 8732)
         # conf_layers 没有包含 softmax, 所以 from_logits 需要为 True
-        total_count = gt_confs.shape[1]
         temp_loss = self.temp_cross_entropy(gt_confs, confs)
-        pos_index = gt_confs > 0
-        pos_count = np.sum(pos_index, axis=1)
-        neg_count = pos_count * HARD_NEGATIVE_RATIO
-        neg_index = np.argsort(np.argsort(temp_loss, axis=1), axis=1)
+        pos_idx = gt_confs > 0
+        num_pos = tf.reduce_sum(tf.dtypes.cast(pos_idx, tf.int32), axis=1)
+        num_neg = num_pos * HARD_NEGATIVE_RATIO
 
-        neg_index = neg_index > np.expand_dims(total_count - neg_count, 1)
-        # neg_index = np.logical_and(np.logical_not(pos_index), neg_index)
-        return pos_index, np.logical_or(neg_index, pos_index)
+        rank = tf.argsort(temp_loss, axis=1, direction="DESCENDING")
+        rank = tf.argsort(rank, axis=1)
+        neg_idx = rank < tf.expand_dims(num_neg, 1)
+
+        return pos_idx, tf.math.logical_or(pos_idx, neg_idx)
 
     def __call__(self, gt_confs, gt_locs, confs, locs):
         pos_index, all_index = self._hard_negative_mining(gt_confs, confs)

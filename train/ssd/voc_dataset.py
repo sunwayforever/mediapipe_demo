@@ -12,6 +12,29 @@ from config import *
 from box import compute_ground_truth
 from transform import Transform
 
+ID_TO_NAME = [
+    "aeroplane",
+    "bicycle",
+    "bird",
+    "boat",
+    "bottle",
+    "bus",
+    "car",
+    "cat",
+    "chair",
+    "cow",
+    "diningtable",
+    "dog",
+    "horse",
+    "motorbike",
+    "person",
+    "pottedplant",
+    "sheep",
+    "sofa",
+    "train",
+    "tvmonitor",
+]
+NAME_TO_ID = dict([(v, k) for k, v in enumerate(ID_TO_NAME)])
 
 class VOCDataset:
     def __init__(self, data_dir):
@@ -24,30 +47,6 @@ class VOCDataset:
         with open(os.path.join(data_dir, "ImageSets/Main/test.txt")) as f:
             self.test_ids = [x.strip() for x in f]
         self.transform = Transform()
-
-        self.id_to_name = [
-            "aeroplane",
-            "bicycle",
-            "bird",
-            "boat",
-            "bottle",
-            "bus",
-            "car",
-            "cat",
-            "chair",
-            "cow",
-            "diningtable",
-            "dog",
-            "horse",
-            "motorbike",
-            "person",
-            "pottedplant",
-            "sheep",
-            "sofa",
-            "train",
-            "tvmonitor",
-        ]
-        self.name_to_id = dict([(v, k) for k, v in enumerate(self.id_to_name)])
 
     def _get_image(self, id):
         return cv2.imread(os.path.join(self.image_dir, f"{id}.jpg"), cv2.COLOR_BGR2RGB)
@@ -70,7 +69,7 @@ class VOCDataset:
                 int(box.find("ymax").text) - 1,
             )
             boxes.append([xmin, ymin, xmax, ymax])
-            labels.append(self.name_to_id[name] + 1)
+            labels.append(NAME_TO_ID[name] + 1)
         return np.array(boxes), np.array(labels)
 
     def _generator(self, subset):

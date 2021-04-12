@@ -24,7 +24,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 dataset = VOCDataset(DATASET)
-model = SSDModel(resume=os.path.exists(f"{MODEL_WEIGHTS}.index") and not args.reset)
+ssd_model = SSDModel(resume=os.path.exists(f"{MODEL_WEIGHTS}.index") and not args.reset)
 ssd_loss = SSDLoss()
 summary = Summary()
 optimizer = tf.keras.optimizers.SGD(
@@ -35,18 +35,18 @@ optimizer = tf.keras.optimizers.SGD(
 
 def train_step():
     with tf.GradientTape() as tape:
-        confs, locs = model(imgs, training=True)
+        confs, locs = ssd_model(imgs, training=True)
         conf_loss, loc_loss = ssd_loss(gt_confs, gt_locs, confs, locs)
-        l2_loss = [tf.nn.l2_loss(t) for t in model.trainable_variables]
+        l2_loss = [tf.nn.l2_loss(t) for t in ssd_model.trainable_variables]
         l2_loss = WEIGHT_DECAY * tf.math.reduce_sum(l2_loss)
         loss = l2_loss + conf_loss + loc_loss
-        gradients = tape.gradient(loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        gradients = tape.gradient(loss, ssd_model.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, ssd_model.trainable_variables))
     return conf_loss, loc_loss
 
 
 def validation_step(imgs, gt_confs, gt_locs):
-    confs, locs = model(imgs, training=False)
+    confs, locs = ssd_model(imgs, training=False)
     return ssd_loss(gt_confs, gt_locs, confs, locs)
 
 
@@ -71,4 +71,4 @@ if __name__ == "__main__":
                 progress.set_postfix(summary.get_loss())
 
         summary.on_epoch_end()
-        model.save_weights(MODEL_WEIGHTS)
+        ssd_model.save_weights(MODEL_WEIGHTS)
