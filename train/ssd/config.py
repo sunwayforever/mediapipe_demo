@@ -13,7 +13,7 @@ N_CLASSES = 21
 HARD_NEGATIVE_RATIO = 3
 
 SSD = os.environ.get("SSD", "default")
-DATASET = "/home/user/download/VOCdevkit/VOC0712/"
+DATASET = "/data/datasets/VOCdevkit/VOC0712/"
 MODEL_WEIGHTS = f"../../cache/ssd_weights/{SSD}"
 SUMMARY_DIR = f"../../cache/ssd_summary/{SSD}"
 

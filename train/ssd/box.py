@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # 2021-03-30 20:55
+from collections import namedtuple
 import numpy as np
 import math
 
@@ -113,6 +114,42 @@ def compute_ground_truth(boxes, labels):
     locs = boxes[best_box_index]
     locs = encode(anchors, locs)
     return confs, locs
+
+
+Box = namedtuple("Box", ["label", "score", "box"])
+
+
+def nms(boxes):
+    # Not Max Supression
+    if len(boxes) <= 0:
+        return np.array([])
+    box = np.array([[*(d.box), d.score] for d in boxes])
+
+    x1 = np.array(box[:, 0])
+    y1 = np.array(box[:, 1])
+    x2 = np.array(box[:, 2])
+    y2 = np.array(box[:, 3])
+    score = np.array(box[:, 4])
+
+    area = np.multiply(x2 - x1 + 1, y2 - y1 + 1)
+    I = np.array(score.argsort())  # read score using I
+    pick = []
+    while len(I) > 0:
+        best = I[-1]
+        pick.append(best)
+        # 计算 box 中 best (I[-1]) 与所有其它 box (I[0:-1]) IOU (Intersection
+        # Over Union), 过滤掉 IOU >= NMS_THRESH 的 box, 因为它们与当前 best 有很
+        # 大的重叠
+        xx1 = np.maximum(x1[best], x1[I[0:-1]])
+        yy1 = np.maximum(y1[best], y1[I[0:-1]])
+        xx2 = np.minimum(x2[best], x2[I[0:-1]])
+        yy2 = np.minimum(y2[best], y2[I[0:-1]])
+        w = np.maximum(0.0, xx2 - xx1 + 1)
+        h = np.maximum(0.0, yy2 - yy1 + 1)
+        intersection = w * h
+        iou = intersection / (area[best] + area[I[0:-1]] - intersection)
+        I = I[np.where(iou <= 0.5)[0]]
+    return [boxes[i] for i in pick]
 
 
 if __name__ == "__main__":
