@@ -5,6 +5,7 @@ from collections import namedtuple
 import numpy as np
 import math
 
+from backbone import *
 from config import *
 
 _anchors = None

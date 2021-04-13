@@ -10,6 +10,7 @@ import numpy as np
 from model import SSDModel
 from voc_dataset import ID_TO_NAME
 from box import gen_anchors, decode, nms, Box
+from backbone import N_ANCHORS
 from config import *
 
 parser = argparse.ArgumentParser()
@@ -41,10 +42,10 @@ if __name__ == "__main__":
     locs = (locs * np.array([width, height, width, height])).astype("int")
 
     boxes = []
-    for i in range(8732):
+    for i in range(N_ANCHORS):
         if classes[i] == 0:
             continue
-        if scores[i] < 0.5:
+        if scores[i] < 0.2:
             continue
         label = ID_TO_NAME[classes[i] - 1]
         boxes.append(Box(label=label, score=scores[i], box=locs[i]))
