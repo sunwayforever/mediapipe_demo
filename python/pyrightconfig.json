@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+{
+    "reportUnknownVariableType": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnusedImport": "warning",
+    "reportUnusedVariable": "warning",
+    "reportUnusedClass": "warning",
+    "reportUnusedFunction": "warning",
+    "reportDuplicateImport": "warning",
+    "reportWildcardImportFromLibrary": "warning",
+    "reportInvalidStringEscapeSequence": "warning",
+    "reportAssertAlwaysTrue": "warning",
+    "reportSelfClsParameterName": "warning",
+    "reportUnsupportedDunderAll": "warning",
+    "reportUnboundVariable": "error",
+    "reportUndefinedVariable": "error",
+    "reportGeneralTypeIssues": "error",
+    "reportPropertyTypeMismatch": "error",
+    "reportMissingImports": "error",
+}
