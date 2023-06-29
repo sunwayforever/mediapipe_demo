@@ -1,6 +1,6 @@
-# README
+# MediaPipe Demo
 
-## Prerequisite
+## Getting started
 
   - pip install numpy
 
@@ -20,14 +20,13 @@
     
     https://docs.opencv.org/master/d7/d9f/tutorial\_linux\_install.html
     
-    `cmake -D PYTHON_DEFAULT_EXECUTABLE=$(python -c "import sys;
-    print(sys.executable)") -D PYTHON3_EXECUTABLE=$(python -c "import
-    sys; print(sys.executable)") -D PYTHON3_NUMPY_INCLUDE_DIRS=$(python
-    -c "import numpy; print (numpy.get_include())") -D
-    PYTHON3_PACKAGES_PATH=$(python -c "from distutils.sysconfig import
-    get_python_lib; print(get_python_lib())")
-    -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-master/modules
-    ../opencv-master`
+    ```
+    cmake -D PYTHON_DEFAULT_EXECUTABLE=$(python -c "import sys; print(sys.executable)") 
+      -D PYTHON3_EXECUTABLE=$(python -c "import sys; print(sys.executable)") 
+      -D PYTHON3_NUMPY_INCLUDE_DIRS=$(python -c "import numpy; print (numpy.get_include())") 
+      -D PYTHON3_PACKAGES_PATH=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
+      -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-master/modules ../opencv-master
+    ```
 
   - pip install pyqt5==5.15.2
 
@@ -50,8 +49,10 @@ or using a fresh installed conda environment:
   - conda env create -f environment.yml
 
 ## Run
-
-./launcher.sh
+```
+$> cd python
+$> ./launcher.sh
+```
 
 ## Note
 
